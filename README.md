@@ -38,7 +38,7 @@ We would like to detect all the 2D shapes packed in a single picture.
 
 For example, providing the following image [`metal_slug_standing_stance.png`](./metal_slug_standing_stance.png):
 
-![Metal Slug Standing Stance](metal_slug_sprite_standing_stance.png)
+![Metal Slug Standing Stance](metal_slug_sprite_standing_stance_large.png)
 
 we would like to detect the following three sprites:
 
