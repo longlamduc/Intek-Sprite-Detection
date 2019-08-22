@@ -1,10 +1,10 @@
-# 2D Shape Detection
+# 2D Sprite Detection
 
 ## Sprite
 
 A [**sprite**](<(<https://en.wikipedia.org/wiki/Sprite_(computer_graphics)>) is a small [**raster graphic**](https://en.wikipedia.org/wiki/Raster_graphics) (a **bitmap**) that represents an object such as a character, a vehicle, a projectile, etc.
 
-![Metal Slug ](metal_slug_sprite_color_medium.png)
+![Metal Slug ](metal_slug_sprite_large.png)
 
 Sprites are a popular way to create large, complex scenes as you can manipulate each sprite separately from the rest of the scene. This allows for greater control over how the scene is rendered, as well as over how the players can interact with the scene.
 
@@ -26,23 +26,59 @@ For example, the animation of the hero Marco Rossi (Metal Slug), running with a 
 
 It is not uncommon for games to have tens to hundreds of sprites. Loading each of these as an individual image would consume a lot of memory and processing power. To help manage sprites and avoid using so many images, many games use **sprite sheets** (also known as **image sprites**).
 
-A sprite sheet consists of multiple sprites in one image. In other words, sprite sheets pack multiple sprites into a single picture. Using sprite sheet, video game developers create sprite sheet animation representing one or several animation sequences while only loading a single file.
-
-We provide hereafter an example of the sprite sheet of Metal Slug 1:
+A sprite sheet consists of multiple sprites in one image. In other words, sprite sheets pack multiple sprites into a single picture. Using sprite sheet, video game developers create sprite sheet animation representing one or several animation sequences while only loading a single file:
 
 ![Metal Slug Sprites](metal_slug_sprite_sheet_large.png)
 
-# Waypoint 1:
+## Sprite Bounding Box
 
-We would like to detect all the sprites packed in a single picture. For example, providing the following image [`metal_slug_standing_stance.png`](./metal_slug_standing_stance.png):
+A frame (**bounding box**) can be used to delimit the sprite in the sprite sheet. This bounding box is defined with two 2D points `top_left` and the `bottom_right`, which their respective coordinates `x` and `y` are relative to the top-left corner of the sprite sheet's image.
+
+For example:
+
+![Shape Bounding Boxes](metal_slug_sprite_detection_bounding_boxes.png)
+
+## Sprite Mask
+
+The mask of a sprite defines the 2D shape of the sprite. For example, the sprite sheet [`metal_slug_sprite_standing_stance_large.png`](metal_slug_sprite_standing_stance_large.png) contains the 3 following sprites:
 
 ![Metal Slug Standing Stance](metal_slug_sprite_standing_stance_large.png)
 
-we would like to detect the three sprites which we highlight the 2D sprites:
+The masks of these sprites are respectively:
 
 ![](metal_slug_sprite_detection_coloring.png)
 
-Write a function `detect_sprites` that takes an argument `image` (an object [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html)) and that returns two values:
+## Optimized Sprite Sheets
+
+Sprites could be evenly placed in the sprite sheet according to their bounding box. The disadvantage is that this method of placement wastes a lot of memory because of all the additional transparency of each sprite, especially when sprites have different width and height.
+
+The developers are aware of the wasted memory and started to optimize the space in the sprite sheets. Sprites are placed close to each others, depending on their shape. The bounding box of a sprite may intersect the bounding box of another sprite, but the shape of this sprite is always separated from the shape of any other sprites with at least 1 transparent pixel.
+
+![Optimized Sprite Sheet](optimized_sprite_sheet.png)
+
+This space optimization is even more efficient when some big sprites have concave shape (i.e., shape that curves inward):
+
+| Scene with 2 Sprites    | Sprite Sheet                                 | Sprite Masks                                      |
+| ----------------------- | -------------------------------------------- | ------------------------------------------------- |
+| ![Islands](islands.png) | ![Islands Sprite Sheet](islands_sprites.png) | ![Islands Sprite Masks](islands_sprite_masks.png) |
+
+# Waypoint: Write a class `Sprite`
+
+Write a class `Sprite` that contains the following attributes:
+
+- `top_left`: A 2D point that indicates the top-left position of the bounding box of the shape in the image;
+
+- `bottom_right`: A 2D point that indicates the bottom-most position of the bounding box of the shape in the image;
+
+- `mask_color`: An integer representing the RGB value of this sprite in the mask image.
+
+# Waypoint :
+
+We would like to detect all the sprites packed in a single picture. For example, providing the following image [`metal_slug_standing_stance.png`](./metal_slug_standing_stance.png):
+
+Write a function `detect_sprites` that takes an argument `image` (an object [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html)) and that returns an object `SpriteSheet`.
+
+An object `SpriteSheet`
 
 - A list of objects `Sprite` corresponding to all the sprites that have been detected;
 
@@ -56,12 +92,6 @@ An object `Sprite` contains the following attributes:
 
 - `mask_color`: An integer representing the RGB value of this sprite in the mask image.
 
-![Shape Bounding Boxes](metal_slug_sprite_detection_bounding_boxes.png)
-
-A 2D point is an object that has 2 attributes `x` and `y` (integers).
-
-_Note: the coordinates of the 2D points `top_left` and the `bottom_right` are relative to the top-left corner of the image._
-
 The function `detect_shapes` accepts an optional argument `transparent_color` (an integer if the image format is grayscale, or a tuple `(red, green, blue)` if the image format is `RGB`) that identifies the transparent color of the image. The function ignores any pixels of the image with this color.
 
 If this argument `transparent_color` is not passed, the function determines the transparent color of the image as follows:
@@ -73,7 +103,7 @@ If this argument `transparent_color` is not passed, the function determines the 
 For example:
 
 ```python
->>> shapes, mask = detect_shapes('./metal_slug_sprite_standing_stance.png')
+>>> sprite_sheet = detect_sprites('./metal_slug_sprite_standing_stance.png')
 >>> len(shapes)
 3
 >>> first_shape = shapes[0]
