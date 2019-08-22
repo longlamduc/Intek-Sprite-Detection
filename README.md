@@ -40,17 +40,20 @@ For example, providing the following image [`metal_slug_standing_stance.png`](./
 
 ![Metal Slug Standing Stance](metal_slug_sprite_standing_stance.png)
 
-We would like to detect the following three sprites:
+we would like to detect the following three sprites:
 
 ![](metal_slug_sprite_detection_coloring.png)
-
-|                                               |                                               |                                               |                                               |
-| --------------------------------------------- | --------------------------------------------- | --------------------------------------------- | --------------------------------------------- |
-| ![](metal_slug_sprite_detection_01_large.png) | ![](metal_slug_sprite_detection_02_large.png) | ![](metal_slug_sprite_detection_03_large.png) | ![](metal_slug_sprite_detection_04_large.png) |
-| ![](metal_slug_sprite_detection_05_large.png) | ![](metal_slug_sprite_detection_06_large.png) | ![](metal_slug_sprite_detection_07_large.png) | ![](metal_slug_sprite_detection_08_large.png) |
 
 Write a function `detect_shapes` that takes an argument `image` (an object [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html)) and that returns two values:
 
 - An object [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html), corresponding to the masks of the detected sprites;
 
 - A list of objects `Sprite`
+
+The function `detect_shapes` accepts an optional argument `transparent_color` (an integer if the image format is grayscale, or a tuple `(red, green, blue)` if the image format is `RGB`) that identifies the transparent color of the image. The function ignores any pixels of the image with this color.
+
+If this argument `transparent_color` is not passed, the function determines the transparent color of the image as follows:
+
+1. The image, such as a PNG file, has an [alpha channel](<https://en.wikipedia.org/wiki/Transparency_(graphic)>): the function ignores all the pixels of the image which alpha component is `255`;
+
+2. The image has no alpha channel: the function identifies the color the mostly used in the image as the transparent color.
