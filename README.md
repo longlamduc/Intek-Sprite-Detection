@@ -46,9 +46,23 @@ we would like to detect the following three sprites:
 
 Write a function `detect_shapes` that takes an argument `image` (an object [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html)) and that returns two values:
 
-- An object [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html), corresponding to the masks of the detected sprites;
+- A list of objects `Shape`;
 
-- A list of objects `Sprite`
+- An object [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html), corresponding to the masks of the detected sprites.
+
+An object `Shape` contains the following attributes:
+
+- `top_left`: A 2D point that indicates the top-left position of the bounding box of the shape in the image;
+
+- `bottom_right`: A 2D point that indicates the bottom-most position of the bounding box of the shape in the image;
+
+- `mask_color`: An integer representing the RGB value of this sprite in the mask image.
+
+![Shape Bounding Boxes](metal_slug_sprite_detection_bounding_boxes.png)
+
+A 2D point is an object that has 2 attributes `x` and `y` (integers).
+
+_Note: the coordinates of the 2D points `top_left` and the `bottom_right` are relative to the top-left corner of the image._
 
 The function `detect_shapes` accepts an optional argument `transparent_color` (an integer if the image format is grayscale, or a tuple `(red, green, blue)` if the image format is `RGB`) that identifies the transparent color of the image. The function ignores any pixels of the image with this color.
 
@@ -57,3 +71,16 @@ If this argument `transparent_color` is not passed, the function determines the 
 1. The image, such as a PNG file, has an [alpha channel](<https://en.wikipedia.org/wiki/Transparency_(graphic)>): the function ignores all the pixels of the image which alpha component is `255`;
 
 2. The image has no alpha channel: the function identifies the color the mostly used in the image as the transparent color.
+
+For example:
+
+```python
+>>> shapes, mask = detect_shapes('./metal_slug_sprite_standing_stance.png')
+>>> len(shapes)
+3
+>>> first_shape = shapes[0]
+>>> first_shape.top_left.x, first_shape.top_left.y
+4, 2
+>>> first_shape.bottom_right.x, first_shape.bottom_right.y
+33, 39
+```
