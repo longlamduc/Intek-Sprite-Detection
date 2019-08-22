@@ -1,4 +1,4 @@
-# 2D Sprite Detection
+# Sprite Detection
 
 ## Sprite
 
