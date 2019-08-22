@@ -34,12 +34,22 @@ We provide hereafter an example of the sprite sheet of Metal Slug 1:
 
 # Waypoint 1:
 
+We would like to detect all the 2D shapes packed in a single picture.
+
+For example, providing the following image [`metal_slug_standing_stance.png`](./metal_slug_standing_stance.png):
+
+![Metal Slug Standing Stance](metal_slug_sprite_standing_stance.png)
+
+We would like to detect the following three sprites:
+
+![](metal_slug_sprite_detection_coloring.png)
+
 |                                               |                                               |                                               |                                               |
 | --------------------------------------------- | --------------------------------------------- | --------------------------------------------- | --------------------------------------------- |
 | ![](metal_slug_sprite_detection_01_large.png) | ![](metal_slug_sprite_detection_02_large.png) | ![](metal_slug_sprite_detection_03_large.png) | ![](metal_slug_sprite_detection_04_large.png) |
 | ![](metal_slug_sprite_detection_05_large.png) | ![](metal_slug_sprite_detection_06_large.png) | ![](metal_slug_sprite_detection_07_large.png) | ![](metal_slug_sprite_detection_08_large.png) |
 
-Write a function `detect_sprite` that takes an argument `image` (an object [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html)) and that returns two values:
+Write a function `detect_shapes` that takes an argument `image` (an object [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html)) and that returns two values:
 
 - An object [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html), corresponding to the masks of the detected sprites;
 
