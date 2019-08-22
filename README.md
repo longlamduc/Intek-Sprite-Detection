@@ -72,7 +72,9 @@ Write a class `Sprite` that contains the following attributes:
 
 - `mask_color`: An integer representing the RGB value of this sprite in the mask image.
 
-# Waypoint :
+# Waypoint: Write a class `SpriteSheet`
+
+# Waypoint: Detect the Sprites in a Sprite Sheet Picture
 
 We would like to detect all the sprites packed in a single picture. For example, providing the following image [`metal_slug_standing_stance.png`](./metal_slug_standing_stance.png):
 
