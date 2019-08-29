@@ -158,9 +158,11 @@ For example:
 186
 ```
 
-# Waypoint: Detect the Sprites in an Image
+# Waypoint 3: Detect the Sprites in an Image
 
 We would like to detect all the sprites packed in a single picture.
+
+**WARNING: You are NOT ALLOWED to use any computer vision libraries (e.g. [OpenCV](https://opencv.org/) and others), but image processing (e.g., [Python Image Library](https://python-pillow.org/)) and scientific computing (e.g, [Numpy](https://numpy.org/)) libraries!**
 
 Write a function `find_sprites` that takes an argument `image` (a [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object) and an optional argument `transparent_color` (an integer if the image format is grayscale, or a tuple `(red, green, blue)` if the image format is `RGB`) that identifies the transparent color of the image. The function ignores any pixels of the image with this color.
 
