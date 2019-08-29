@@ -108,9 +108,53 @@ _Note 2: You SHOULD [measure the execution time](https://docs.python.org/3.7/lib
 
 # Waypoint: Write a class `Sprite`
 
-Write a class `Sprite` which constructor takes 4 arguments `x1`, `y1`, `x2`, and `y2` (integers). These arguments are used to initialize the private attributes of the class `Sprite`.
+Write a class `Sprite` which constructor takes 4 arguments `x1`, `y1`, `x2`, and `y2` (integers). These arguments are used to initialize some private attributes of the class `Sprite`.
 
 Add the two properties `top_left` and `bottom_right` to the class `Sprite` that correspond to the coordinates `(x1, y1)` (a tuple) of the top-left corner, respectively the coordinates `(x2, y2)` (a tuple) of the right-most corner.
+
+For example:
+
+```python
+>>> sprite = Sprite(12, 23, 145, 208)
+>>> sprite.top_left
+(12, 23)
+>>> sprite.bottom_right
+(145, 208)
+```
+
+The constructor of the class `Sprite` raises an exception `ValueError` if one of the arguments `x1`, `y1`, `x2`, and `y2` are not positive integer, or if the arguments `x2` and `y2` is not equal or greater respectively than `x1` and `y2`.
+
+For examples:
+
+```python
+>>> sprite = Sprite(-1, 0, 0, 0)
+Traceback (most recent call last):
+  File "<input>", line 1, in <module>
+  File "<input>", line 11, in __init__
+ValueError: Invalid coordinates
+>>> sprite = Sprite("Hello", 0, 0, 0)
+Traceback (most recent call last):
+  File "<input>", line 1, in <module>
+  File "<input>", line 13, in __init__
+ValueError: Invalid coordinates
+>>> sprite = Sprite(1, 0, 0, 0)
+Traceback (most recent call last):
+  File "<input>", line 1, in <module>
+  File "<input>", line 13, in __init__
+ValueError: Invalid coordinates
+```
+
+Add the two properties `width` and `height` that returns respectively the number of pixels horizontally and vertically of this sprite.
+
+For example:
+
+```python
+>>> sprite = Sprite(12, 23, 145, 208)
+>>> sprite.width
+134
+>>> sprite.height
+186
+```
 
 # Waypoint: Detect the Sprites in a Sprite Sheet Picture
 
