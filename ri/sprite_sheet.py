@@ -36,7 +36,9 @@ class Sprite:
 
         :param bottom_right: Coordinates of the right-most corner.
         """
-        if x1 > x2 or y1 > y2:
+        if not isinstance(x1, int) or not isinstance(y1, int) or \
+           not isinstance(x2, int) or not isinstance(y2, int) or \
+           x1 < 0 or y1 < 0 or x2 < 0 or y2 < 0 or x1 > x2 or y1 > y2:
             raise ValueError('Invalid coordinates')
 
         self.__x1 = x1
@@ -47,6 +49,15 @@ class Sprite:
     @property
     def bottom_right(self):
         return self.__x2, self.__y2
+
+    @property
+    def height(self):
+        return self.__y2 - self.__y1 + 1
+
+
+    @property
+    def width(self):
+        return self.__x2 - self.__x1 + 1
 
     @property
     def top_left(self):
