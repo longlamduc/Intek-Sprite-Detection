@@ -158,7 +158,7 @@ For example:
 186
 ```
 
-# Waypoint 3: Detect the Sprites in an Image
+# Waypoint 3: Detect Sprites in an Image
 
 We would like to find all the sprites packed in a single picture.
 
