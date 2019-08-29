@@ -62,7 +62,7 @@ This space optimization is even more efficient when some big sprites have concav
 | ----------------------- | -------------------------------------------- | ------------------------------------------------- |
 | ![Islands](islands.png) | ![Islands Sprite Sheet](islands_sprites.png) | ![Islands Sprite Masks](islands_sprite_masks.png) |
 
-# Waypoint: Find the Most Common Color in an Image
+# Waypoint 1: Find the Most Common Color in an Image
 
 Write a function `find_most_common_color` that takes an argument `image` (a [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object) and that returns the pixel color that is the most used in this image.
 
@@ -75,6 +75,7 @@ The data type of the value returned depends on the [image's mode](https://pillow
 For example:
 
 ```python
+>>> from PIL import Image
 # JPEG image
 >>> image = Image.open('islands.jpg')
 >>> image.mode
@@ -101,12 +102,13 @@ _Note 2: You SHOULD [measure the execution time](https://docs.python.org/3.7/lib
 
 ```python
 >>> import timeit
+>>> from PIL import Image
 >>> image = Image.open('islands.jpg')
 >>> timeit.timeit(stmt=lambda: find_most_common_color(image), number=1)
 1.6871624910000023
 ```
 
-# Waypoint: Write a class `Sprite`
+# Waypoint 2: Write a class `Sprite`
 
 Write a class `Sprite` which constructor takes 4 arguments `x1`, `y1`, `x2`, and `y2` (integers). These arguments are used to initialize some private attributes of the class `Sprite`.
 
@@ -122,7 +124,7 @@ For example:
 (145, 208)
 ```
 
-The constructor of the class `Sprite` raises an exception `ValueError` if one of the arguments `x1`, `y1`, `x2`, and `y2` are not positive integer, or if the arguments `x2` and `y2` is not equal or greater respectively than `x1` and `y2`.
+The constructor of the class `Sprite` raises an exception `ValueError` if one or more of the arguments `x1`, `y1`, `x2`, and `y2` is not positive integer, or if the arguments `x2` and `y2` is not equal or greater respectively than `x1` and `y2`.
 
 For examples:
 
@@ -156,46 +158,81 @@ For example:
 186
 ```
 
-# Waypoint: Detect the Sprites in a Sprite Sheet Picture
+# Waypoint: Detect the Sprites in an Image
 
 We would like to detect all the sprites packed in a single picture.
 
-Write a function `detect_sprites` that takes an argument `image` (a [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object) and that returns an object `SpriteSheet`.
-
-An object `SpriteSheet`
-
-- A list of objects `Sprite` corresponding to all the sprites that have been detected;
-- An object [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html), corresponding to the masks of the detected sprites.
-
-An object `Sprite` contains the following attributes:
-
-- `top_left`: A 2D point that indicates the top-left position of the bounding box of the shape in the image;
-- `bottom_right`: A 2D point that indicates the bottom-most position of the bounding box of the shape in the image;
-- `mask_color`: An integer representing the RGB value of this sprite in the mask image.
-
-The function `detect_shapes` accepts an optional argument `transparent_color` (an integer if the image format is grayscale, or a tuple `(red, green, blue)` if the image format is `RGB`) that identifies the transparent color of the image. The function ignores any pixels of the image with this color.
+Write a function `find_sprites` that takes an argument `image` (a [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object) and an optional argument `transparent_color` (an integer if the image format is grayscale, or a tuple `(red, green, blue)` if the image format is `RGB`) that identifies the transparent color of the image. The function ignores any pixels of the image with this color.
 
 If this argument `transparent_color` is not passed, the function determines the transparent color of the image as follows:
 
 1. The image, such as a PNG file, has an [alpha channel](<https://en.wikipedia.org/wiki/Transparency_(graphic)>): the function ignores all the pixels of the image which alpha component is `255`;
+2. The image has no alpha channel: the function identifies the most common color of the image as the transparent color (cf. our function `find_most_common_color`).
 
-2. The image has no alpha channel: the function identifies the color the mostly used in the image as the transparent color.
+The function returns a tuple `(sprites, sprite_mask)`
+where:
 
-For example:
+- `sprites`: A dictionary where each key represents the index (integer strictly positive) of a sprite that has been found, and the respective value references the object `Sprite` of this sprite;
+- `sprite_mask`: A 2D array of integers, which number of rows is equal to the height of the image object passed to the function, and which number of columns is equal to the width of this image. The `sprite_mask` array maps each pixel of the image passed to the function to the index of a sprite this pixel corresponds to, or `0` if this pixel doesn't belong to a sprite (e.g., transparent color).
+
+_Note: The sprite indices can be whatever unique strictly positive integers, with no particular order. The index of a sprite has no particular relationship with the position of the sprite in the image._
+
+For example, let's consider the image file [sprite_example.png](sprite_example.png) zoomed-in hereafter:
+
+![](sprite_example_large.png)
 
 ```python
 >>> from PIL import Image
->>> image = Image.open('./metal_slug_sprite_standing_stance.png')
->>> sprite_sheet = detect_sprites(image)
->>> len(shapes)
-3
->>> first_shape = shapes[0]
->>> first_shape.top_left.x, first_shape.top_left.y
-4, 2
->>> first_shape.bottom_right.x, first_shape.bottom_right.y
-33, 39
+>>> image = Image.open('sprite_example.png')
+>>> sprites, sprite_mask = find_sprites(image, transparent_color=(255, 255, 255))
+>>> len(sprites)
+1
+>>> for sprite_index, sprite in sprites.items():
+...     print(f"Sprite ({sprite_index}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
+Sprite (4): [(0, 0), (4, 5)] 5x6
+>>> import pprint
+>>> pprint.pprint(sprite_mask)
+[[4, 0, 4, 0, 4],
+ [4, 4, 0, 0, 4],
+ [0, 0, 4, 4, 4],
+ [4, 0, 0, 0, 4],
+ [0, 4, 4, 0, 4],
+ [0, 0, 0, 4, 0]]
 ```
 
+Other example with the following image:
+
+![](metal_slug_sprite_standing_stance.png)
+
+```python
+>>> from PIL import Image
+>>> image = Image.open('metal_slug_sprite_standing_stance.png')
+>>> sprites, sprite_mask = find_sprites(image)
+>>> len(sprites)
+3
+>>> for sprite_index, sprite in sprites.items():
+...     print(f"Sprite ({sprite_index}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
+Sprite (1): [(4, 2), (33, 39)] 30x38
+Sprite (2): [(35, 2), (63, 39)] 29x38
+Sprite (3): [(64, 2), (92, 39)] 29x38
+```
+
+Last example with the following image:
+
+![](islands.png)
+
+```python
+>>> image = Image.open('islands.png')
+>>> sprites, sprite_mask = find_sprites(image)
+>>> len(sprites)
+2
+>>> for sprite_index, sprite in sprites.items():
+...    print(f"Sprite ({sprite_index}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
+Sprite (77): [(247, 72), (1343, 1093)] 1097x1022
+Sprite (108): [(1097, 1055), (1341, 1249)] 245x195
+```
+
+<!--
 # Waypoint: Write a class `SpriteSheet`
 
 Write a class `SpriteSheet` which constructor accepts an argument `image` that corresponds to either:
@@ -210,3 +247,4 @@ This constructor also accepts an optional argument `transparent_color` that iden
 - an integer if the mode is grayscale;
 - a tuple `(red, green, blue)` of integers if the mode is `RGB`;
 - a tuple `(red, green, blue, alpha)` of integers if the mode is `RGBA`. The `alpha` element is optional. If not defined, while the image mode is `RGBA`, the constructor considers the `alpha` element to be `255`.
+-->

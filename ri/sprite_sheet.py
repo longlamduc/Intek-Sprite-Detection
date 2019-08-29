@@ -342,7 +342,7 @@ def find_most_common_color(image):
 
 
 
-def detect_sprites(image, transparent_color=None):
+def find_sprites(image, transparent_color=None):
     def __link_sprites(id1, id2):
         """
         Link the two sprites, and all the other sprites connected to them.
@@ -382,7 +382,7 @@ def detect_sprites(image, transparent_color=None):
                     if y > y2: y2 = y
                 sprites[sprite_index] = Sprite(x1, y1, x2, y2)
 
-        return unified_image_mask, sprites
+        return sprites, unified_image_mask
 
 
     # Determine the transparent color if not specified by the caller.
@@ -466,6 +466,13 @@ def save_mask_image(file_path_name, image_mask, background_color=None, display_b
     image.save(file_path_name)
 
 
-image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/optimized_sprite_sheet.png')
-image_mask, sprites = detect_sprites(image)
+image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/islands.png')
+sprites, sprite_mask = find_sprites(image)
+len(sprites)
+for sprite_index, sprite in sprites.items():
+    print(f"Sprite ({sprite_index}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
+
+
+
+
 save_mask_image('/Users/dcaune/foo.png', image_mask, display_bounding_box=True, sprites=sprites)
