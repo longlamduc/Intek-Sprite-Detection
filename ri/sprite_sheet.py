@@ -18,45 +18,39 @@ import argparse
 import collections
 import datetime
 import random
+import sys
 
 from PIL import Image
+from PIL import ImageDraw
 import numpy
 
 
-class Point:
-    def __init__(self, x, y):
-        self.__x = x
-        self.__y = y
-
-    @property
-    def x(self):
-        return self.__x
-
-    @property
-    def y(self):
-        return self.__y
+NEIGHBOR_PIXEL_RELATIVE_COORDINATES = ((-1, -1), (0, -1), (1, -1), (-1, 0))
 
 
 class Sprite:
-    def __init__(self, top_left, bottom_right, mask_color):
-        if not isinstance(top_left, Point) or not isinstance(bottom_right, Point):
-            raise ValueError('Invalid arguments')
+    def __init__(self, x1, y1, x2, y2):
+        """
 
-        self.__top_left = top_left
-        self.__bottom_right = bottom_right
-        self.__mask_color = mask_color
+        :param top_left: Coordinates of the top-left corner.
+
+        :param bottom_right: Coordinates of the right-most corner.
+        """
+        if x1 > x2 or y1 > y2:
+            raise ValueError('Invalid coordinates')
+
+        self.__x1 = x1
+        self.__y1 = y1
+        self.__x2 = x2
+        self.__y2 = y2
 
     @property
     def bottom_right(self):
-        return self.__bottom_right
-
-    @property
-    def mask_color(self):
-        return self.__mask_color
+        return self.__x2, self.__y2
 
     @property
     def top_left(self):
-        return self.__top_left
+        return self.__x1, self.__y1
 
 
 class SpriteSheet:
@@ -71,6 +65,7 @@ class SpriteSheet:
         self.__image = image
         self.__transparent_color = transparent_color
 
+        self.__sprites = {}
         # Dictionary of sprites connected to each other.
         self.__sprites_links = {}
 
@@ -78,10 +73,9 @@ class SpriteSheet:
         """
         Link the two sprites, and all the other sprites connected to them.
 
-        :param sprites_links:
         :param id1:
+
         :param id2:
-        :return:
         """
         sprite_indices = self.__sprites_links[id1] + self.__sprites_links[id2]
         for sprite_index in sprite_indices:
@@ -90,7 +84,9 @@ class SpriteSheet:
     def detect_sprites(self, transparent_color=None):
         # Determine the transparent color if not specified by the caller.
         if transparent_color is None:
-            transparent_color = self.detect_most_common_color()
+            transparent_color = find_most_common_color(self.__image)
+
+        print(transparent_color)
 
         # Convert the image into an array for faster access.
         image_pixels = numpy.asarray(self.__image)
@@ -117,7 +113,7 @@ class SpriteSheet:
                             # whether the neighbor pixel belongs to this same sprite, and if not,
                             # merge those two sprites together.
                             if pixel_sprite_index and pixel_sprite_index != image_mask[y + dy][x + dx] \
-                                    and image_mask[y + dy][x + dx] not in sprites_links[pixel_sprite_index]:
+                                    and image_mask[y + dy][x + dx] not in self.__sprites_links[pixel_sprite_index]:
                                 self.__link_sprites(pixel_sprite_index, image_mask[y + dy][x + dx])
 
                             pixel_sprite_index = image_mask[y + dy][x + dx]
@@ -126,10 +122,12 @@ class SpriteSheet:
 
                     if pixel_sprite_index == 0:
                         image_mask[y][x] = sprite_index
-                        sprites_links[sprite_index] = [sprite_index]
+                        self.__sprites_links[sprite_index] = [sprite_index]
                         sprite_index += 1
 
-        return image_mask, sprites_links
+        return image_mask, self.__sprites_links
+
+
 
     def detect_most_common_color(self):
         """
@@ -172,92 +170,92 @@ class SpriteSheet:
 
 
 
-def main():
-    arguments = parse_arguments()
-
-    image = Image.open(arguments.file_path_name)
-    detect_sprites(image)
-
-
-def parse_arguments():
-    """
-    Convert argument strings to objects and assign them as attributes of
-    the namespace.
-
-
-    @return: an instance ``argparse.Namespace`` corresponding to the
-        populated namespace.
-    """
-    parser = argparse.ArgumentParser(description='Sprite Detection')
-    parser.add_argument(
-        '-f', '--file',
-        dest='file_path_name',
-        metavar='FILE',
-        required=True,
-        help='specify the absolute name and path of the sprite sheet image file.')
-
-    return parser.parse_args()
-
-
-# if __name__ == '__main__':
-#     main()
-
-
-def build_sprites_mask_image(file_path_name, image_mask, sprites_links, unified=False, background_color=None):
-    if not background_color:
-        background_color = (255, 255, 255)
-
-    sprites_color = dict()
-
-    if unified:
-        for sprites_indices in sprites_links.values():
-            primary_sprite_index = sprites_indices[0]
-            if primary_sprite_index not in sprites_color:
-                sprites_color[primary_sprite_index] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-
-        pixels = numpy.asarray(
-            [[sprites_color[sprites_links[c][0]] if c else (255, 255, 255) for c in row] for row in image_mask],
-            dtype=numpy.uint8)
-
-    else:
-        sprites_color[0] = (255, 255, 255)
-
-        for k in sprites_links.keys():
-            sprites_color[k] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-
-        pixels = numpy.asarray(
-            [[sprites_color[c] for c in row] for row in image_mask],
-            dtype=numpy.uint8)
-
-    Image.fromarray(pixels, 'RGB').save(file_path_name)
-
-
+# def main():
+#     arguments = parse_arguments()
+#
+#     image = Image.open(arguments.file_path_name)
+#     detect_sprites(image)
 #
 #
-# image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/metal_slug_sprite_sheet.png')
-# image_mask, sprites_links = SpriteSheet.detect_sprites(image)
-# build_sprites_mask_image('/Users/dcaune/Downloads/metal_slug_sprite_sheet_mask.png', image_mask, sprites_links)
+# def parse_arguments():
+#     """
+#     Convert argument strings to objects and assign them as attributes of
+#     the namespace.
 #
 #
-# sprite_sheet = SpriteSheet(image)
-# start_time = datetime.datetime.now()
-# image_mask, sprites_links = sprite_sheet.detect_sprites()
-# end_time = datetime.datetime.now()
-# execution_time = end_time - start_time
+#     @return: an instance ``argparse.Namespace`` corresponding to the
+#         populated namespace.
+#     """
+#     parser = argparse.ArgumentParser(description='Sprite Detection')
+#     parser.add_argument(
+#         '-f', '--file',
+#         dest='file_path_name',
+#         metavar='FILE',
+#         required=True,
+#         help='specify the absolute name and path of the sprite sheet image file.')
 #
-# execution_time
-# sprite_sheet.sprite_merging_time
-# execution_time - sprite_sheet.sprite_merging_time
-#
-# build_sprites_mask_image('/Users/dcaune/Devel/intek-mission-sprite_detection/islands_split_sprites_mask_.png', image_mask, sprites_links)
-# build_sprites_mask_image('/Users/dcaune/Devel/intek-mission-sprite_detection/islands_unified_sprites_mask_.png', image_mask, sprites_links, unified=True)
+#     return parser.parse_args()
 #
 #
-# image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/qr_code.png')
-# image_mask, sprites_links = SpriteSheet.detect_sprites(image)
+# # if __name__ == '__main__':
+# #     main()
 #
-# build_sprites_mask_image('/Users/dcaune/Devel/intek-mission-sprite_detection/qr_code_decomposed_mask.png', image_mask, sprites_links)
-# build_sprites_mask_image('/Users/dcaune/Devel/intek-mission-sprite_detection/qr_code_unified_mask.png', image_mask, sprites_links, unified=True)
+#
+# def build_sprites_mask_image(file_path_name, image_mask, sprites_links, unified=False, background_color=None):
+#     if not background_color:
+#         background_color = (255, 255, 255)
+#
+#     sprites_color = dict()
+#
+#     if unified:
+#         for sprites_indices in sprites_links.values():
+#             primary_sprite_index = sprites_indices[0]
+#             if primary_sprite_index not in sprites_color:
+#                 sprites_color[primary_sprite_index] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+#
+#         pixels = numpy.asarray(
+#             [[sprites_color[sprites_links[c][0]] if c else (255, 255, 255) for c in row] for row in image_mask],
+#             dtype=numpy.uint8)
+#
+#     else:
+#         sprites_color[0] = (255, 255, 255)
+#
+#         for k in sprites_links.keys():
+#             sprites_color[k] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+#
+#         pixels = numpy.asarray(
+#             [[sprites_color[c] for c in row] for row in image_mask],
+#             dtype=numpy.uint8)
+#
+#     Image.fromarray(pixels, 'RGB').save(file_path_name)
+#
+#
+# #
+# #
+# # image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/metal_slug_sprite_sheet.png')
+# # image_mask, sprites_links = SpriteSheet.detect_sprites(image)
+# # build_sprites_mask_image('/Users/dcaune/Downloads/metal_slug_sprite_sheet_mask.png', image_mask, sprites_links)
+# #
+# #
+# # sprite_sheet = SpriteSheet(image)
+# # start_time = datetime.datetime.now()
+# # image_mask, sprites_links = sprite_sheet.detect_sprites()
+# # end_time = datetime.datetime.now()
+# # execution_time = end_time - start_time
+# #
+# # execution_time
+# # sprite_sheet.sprite_merging_time
+# # execution_time - sprite_sheet.sprite_merging_time
+# #
+# # build_sprites_mask_image('/Users/dcaune/Devel/intek-mission-sprite_detection/islands_split_sprites_mask_.png', image_mask, sprites_links)
+# # build_sprites_mask_image('/Users/dcaune/Devel/intek-mission-sprite_detection/islands_unified_sprites_mask_.png', image_mask, sprites_links, unified=True)
+# #
+# #
+# # image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/qr_code.png')
+# # image_mask, sprites_links = SpriteSheet.detect_sprites(image)
+# #
+# # build_sprites_mask_image('/Users/dcaune/Devel/intek-mission-sprite_detection/qr_code_decomposed_mask.png', image_mask, sprites_links)
+# # build_sprites_mask_image('/Users/dcaune/Devel/intek-mission-sprite_detection/qr_code_unified_mask.png', image_mask, sprites_links, unified=True)
 
 
 def find_most_common_color(image):
@@ -333,22 +331,130 @@ def find_most_common_color(image):
 
 
 
-image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/metal_slug_sprite_standing_stance_large.png')
-find_most_common_color(image)
-#
-#
-# image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/islands.jpg')
-# image = image.convert('L')
-# find_most_common_color(image)
-#
-#
-# def test(image_file_path_name):
-#     image = Image.open(image_file_path_name)
-#     find_most_common_color(image)
-#
-#
-# image.width
-# image.height
-# import timeit
-# image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/metal_slug_sprite_standing_stance_large.png')
-# timeit.timeit(stmt=lambda: find_most_common_color(image), number=1)
+def detect_sprites(image, transparent_color=None):
+    def __link_sprites(id1, id2):
+        """
+        Link the two sprites, and all the other sprites connected to them.
+
+        :param id1:
+
+        :param id2:
+        """
+        sprite_indices = sprites_links[id1] + sprites_links[id2]
+        for sprite_index in sprite_indices:
+            sprites_links[sprite_index] = sprite_indices
+
+    def __merge_sprite_links():
+        sprites_primary_index = {}
+        for sprite_index, linked_sprites_indices in sprites_links.items():
+            sprites_primary_index[sprite_index] = linked_sprites_indices[0]
+
+        unified_image_mask = [
+            [color and sprites_primary_index[color] for color in row]
+            for row in image_mask]
+
+        foo = collections.defaultdict(list)
+        for y, row in enumerate(unified_image_mask):
+            for x, sprite_index in enumerate(row):
+                foo[sprite_index].append((x, y))
+
+        sprites = {}
+
+        for sprite_index in foo:
+            if sprite_index:
+                x1 = y1 = sys.maxsize
+                x2 = y2 = 0
+                for x, y in foo[sprite_index]:
+                    if x < x1: x1 = x
+                    if x > x2: x2 = x
+                    if y < y1: y1 = y
+                    if y > y2: y2 = y
+                sprites[sprite_index] = Sprite(x1, y1, x2, y2)
+
+        return unified_image_mask, sprites
+
+
+    # Determine the transparent color if not specified by the caller.
+    if transparent_color is None:
+        transparent_color = find_most_common_color(image)
+
+    # Convert the image into an array for faster access.
+    image_pixels = numpy.asarray(image)
+
+    # Build the mask of the image used to store the sprite index for each
+    # pixel of the given image.  The image mask is initially empty.
+    image_width, image_height = image.size
+    image_mask = numpy.asarray([[0] * image_width] * image_height)
+
+    # Start sprite index with `1`; the value `0` for the sprite index of a
+    # pixel in the image mask means that this pixel doesn't belongs to any
+    # sprite (e.g., this is a transparent pixel).
+    sprite_index = 1
+
+    sprites_links = {}
+
+    for y in range(image_height):
+        for x in range(image_width):
+            if tuple(image_pixels[y][x]) != transparent_color:  # @todo: convert `transparent_color` to a numpy.ndarray
+
+                pixel_sprite_index = 0
+                for dx, dy in NEIGHBOR_PIXEL_RELATIVE_COORDINATES:
+                    # Check whether a neighbor pixel belongs to a sprite.
+                    if 0 <= x + dx < image_width and y + dy >= 0 and image_mask[y + dy][x + dx] > 0:
+                        # If the current pixel has been already associated to a sprite, check
+                        # whether the neighbor pixel belongs to this same sprite, and if not,
+                        # merge those two sprites together.
+                        if pixel_sprite_index and pixel_sprite_index != image_mask[y + dy][x + dx] \
+                                and image_mask[y + dy][x + dx] not in sprites_links[pixel_sprite_index]:
+                            __link_sprites(pixel_sprite_index, image_mask[y + dy][x + dx])
+
+                        pixel_sprite_index = image_mask[y + dy][x + dx]
+
+                image_mask[y][x] = pixel_sprite_index
+
+                if pixel_sprite_index == 0:
+                    image_mask[y][x] = sprite_index
+                    sprites_links[sprite_index] = [sprite_index]
+                    sprite_index += 1
+
+    return __merge_sprite_links()
+
+
+
+
+
+def save_mask_image(file_path_name, image_mask, background_color=None, display_bounding_box=False, sprites=None):
+    sprite_indices = set([
+        color
+        for row in image_mask
+        for color in row])
+
+    sprites_color = {
+        0: background_color and (255, 255, 255)
+    }
+
+    for sprite_index in sprite_indices:
+        sprites_color[sprite_index] = (random.randint(64, 200), random.randint(64, 200), random.randint(64, 200))
+
+    pixels = numpy.asarray([
+        [sprites_color[c] if c else (255, 255, 255) for c in row]
+        for row in image_mask],
+        dtype=numpy.uint8)
+
+    image = Image.fromarray(pixels, 'RGB')
+
+    if display_bounding_box:
+        draw = ImageDraw.Draw(image)
+
+        for sprite_index in sprites:
+            sprite = sprites[sprite_index]
+            color = sprites_color[sprite_index]
+            color += (128,)
+            draw.rectangle((sprite.top_left, sprite.bottom_right), outline=color, width=1)
+
+    image.save(file_path_name)
+
+
+image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/optimized_sprite_sheet.png')
+image_mask, sprites = detect_sprites(image)
+save_mask_image('/Users/dcaune/foo.png', image_mask, display_bounding_box=True, sprites=sprites)
