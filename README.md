@@ -108,26 +108,9 @@ _Note 2: You SHOULD [measure the execution time](https://docs.python.org/3.7/lib
 
 # Waypoint: Write a class `Sprite`
 
-Write a class `Sprite` that contains the following attributes:
+Write a class `Sprite` which constructor takes 4 arguments `x1`, `y1`, `x2`, and `y2` (integers). These arguments are used to initialize the private attributes of the class `Sprite`.
 
-- `top_left`: A 2D point that indicates the top-left position of the bounding box of the shape in the image;
-- `bottom_right`: A 2D point that indicates the bottom-most position of the bounding box of the shape in the image;
-- `mask_color`: An integer representing the RGB value of this sprite in the mask image.
-
-# Waypoint: Write a class `SpriteSheet`
-
-Write a class `SpriteSheet` which constructor accepts an argument `image` that corresponds to either:
-
-- the name and path (a string) that references an image file in the local file system;
-- a [`pathlib.Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path) object that references an image file in the local file system ;
-- a [file object](https://docs.python.org/3/glossary.html#term-file-object) that MUST implement [`read()`](https://docs.python.org/3/library/io.html#io.IOBase.read), [`seek()`](https://docs.python.org/3/library/io.html#io.IOBase.seek), and [`tell()`](https://docs.python.org/3/library/io.html#io.IOBase.tell) methods, and be opened in binary mode;
-- a [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object.
-
-This constructor also accepts an optional argument `transparent_color` that identifies the transparent color of the image. The type of `transparent_color` argument depends on the images' mode:
-
-- an integer if the mode is grayscale;
-- a tuple `(red, green, blue)` of integers if the mode is `RGB`;
-- a tuple `(red, green, blue, alpha)` of integers if the mode is `RGBA`. The `alpha` element is optional. If not defined, while the image mode is `RGBA`, the constructor considers the `alpha` element to be `255`.
+Add the two properties `top_left` and `bottom_right` to the class `Sprite` that correspond to the coordinates `(x1, y1)` (a tuple) of the top-left corner, respectively the coordinates `(x2, y2)` (a tuple) of the right-most corner.
 
 # Waypoint: Detect the Sprites in a Sprite Sheet Picture
 
@@ -168,3 +151,18 @@ For example:
 >>> first_shape.bottom_right.x, first_shape.bottom_right.y
 33, 39
 ```
+
+# Waypoint: Write a class `SpriteSheet`
+
+Write a class `SpriteSheet` which constructor accepts an argument `image` that corresponds to either:
+
+- the name and path (a string) that references an image file in the local file system;
+- a [`pathlib.Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path) object that references an image file in the local file system ;
+- a [file object](https://docs.python.org/3/glossary.html#term-file-object) that MUST implement [`read()`](https://docs.python.org/3/library/io.html#io.IOBase.read), [`seek()`](https://docs.python.org/3/library/io.html#io.IOBase.seek), and [`tell()`](https://docs.python.org/3/library/io.html#io.IOBase.tell) methods, and be opened in binary mode;
+- a [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object.
+
+This constructor also accepts an optional argument `transparent_color` that identifies the transparent color of the image. The type of `transparent_color` argument depends on the images' mode:
+
+- an integer if the mode is grayscale;
+- a tuple `(red, green, blue)` of integers if the mode is `RGB`;
+- a tuple `(red, green, blue, alpha)` of integers if the mode is `RGBA`. The `alpha` element is optional. If not defined, while the image mode is `RGBA`, the constructor considers the `alpha` element to be `255`.
