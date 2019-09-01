@@ -162,6 +162,21 @@ For example:
 
 We would like to find all the sprites packed in a single picture.
 
+You will need to design and implement an image segmentation algorithm that considers the color of each pixel of a specified picture to determine whether this sprite belongs to a sprite or not:
+
+- pixels which color corresponds to the background color of the picture are considered as transparent, i.e., they don't belong to a sprite;
+- pixels which color is different from the background color of the picture are considered as solid, i.e., they belong to a sprite.
+
+Sprites correspond to smaller images composed of adjacent/[connected pixels](https://en.wikipedia.org/wiki/Pixel_connectivity), meaning that each pixel of the sprite is adjacent to at least one of its direct neighbor pixels (8 connectivity pixel):
+
+|                                                   |                                                                                 |
+| ------------------------------------------------- | ------------------------------------------------------------------------------- |
+| ![8 Connectivity Pixel](8-connectivity-pixel.png) | ![8 8-neighbor-relative-pixels-coordinates](8-neighbourhoods-related-pixel.png) |
+
+Sprites are represented by their position `(x, y)` in the picture and their size `(width, height)`.
+
+Your image segmentation algorithm needs to isolate each sprite, producing bounding boxes with correct sizes and identifying isolated parts of a sprite as an included segment.
+
 **WARNING: You are NOT ALLOWED to use any computer vision libraries (e.g. [OpenCV](https://opencv.org/) and others), but image processing (e.g., [Python Image Library](https://python-pillow.org/)) and scientific computing (e.g, [Numpy](https://numpy.org/)) libraries!**
 
 Write a function `find_sprites` that takes an argument `image` (a [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object).
