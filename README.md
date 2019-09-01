@@ -169,9 +169,9 @@ You will need to design and implement an image segmentation algorithm that consi
 
 Sprites correspond to smaller images composed of adjacent/[connected pixels](https://en.wikipedia.org/wiki/Pixel_connectivity), meaning that each pixel of the sprite is adjacent to at least one of its direct neighbor pixels (8 connectivity pixel):
 
-|                                                   |                                                                                 |
-| ------------------------------------------------- | ------------------------------------------------------------------------------- |
-| ![8 Connectivity Pixel](8-connectivity-pixel.png) | ![8 8-neighbor-relative-pixels-coordinates](8-neighbourhoods-related-pixel.png) |
+|                                                   |                                                                                         |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| ![8 Connectivity Pixel](8-connectivity-pixel.png) | ![8 8-neighbor-relative-pixels-coordinates](8-neighbor-relative-pixels-coordinates.png) |
 
 Sprites are represented by their position `(x, y)` in the picture and their size `(width, height)`.
 
