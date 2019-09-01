@@ -167,7 +167,7 @@ You will need to design and implement an image segmentation algorithm that consi
 - pixels which color corresponds to the background color of the picture are considered as transparent, i.e., they don't belong to a sprite;
 - pixels which color is different from the background color of the picture are considered as solid, i.e., they belong to a sprite.
 
-Sprites correspond to smaller images composed of adjacent/[connected pixels](https://en.wikipedia.org/wiki/Pixel_connectivity), meaning that each pixel of the sprite is adjacent to at least one of its direct neighbor pixels (8 connectivity pixel):
+Sprites correspond to smaller images composed of adjacent/[connected pixels](https://en.wikipedia.org/wiki/Pixel_connectivity), meaning that each pixel of the sprite is adjacent to at least one of its direct neighbor pixels ([8-neighborhood](./b5034b2ce2bdf21e09d3915207d7b824ceb4.pdf) connectivity [method](4d991f5902c84c2181c6c573661abdc228b1.pdf)):
 
 |                                                   |                                                                                         |
 | ------------------------------------------------- | --------------------------------------------------------------------------------------- |
