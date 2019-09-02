@@ -169,6 +169,7 @@ We would like to identify all the sprites packed in a single picture.
 You need to implement an [image segmentation algorithm](./b5034b2ce2bdf21e09d3915207d7b824ceb4.pdf) that considers the color of each pixel of a specified picture to determine whether this sprite belongs to a sprite or not:
 
 - pixels which color corresponds to the background color of the picture are considered as transparent, i.e., they don't belong to a sprite;
+
 - pixels which color is different from the background color of the picture are considered as solid, i.e., they belong to a sprite.
 
 Sprites correspond to smaller images composed of [connected pixels](https://en.wikipedia.org/wiki/Pixel_connectivity), meaning that each pixel of a sprite is adjacent to at least one of its direct neighbor pixels ([8-neighborhood connectivity method](4d991f5902c84c2181c6c573661abdc228b1.pdf)):
@@ -191,7 +192,7 @@ If this argument `transparent_color` is not passed, the function determines the 
 
 The function returns a tuple `(sprites, labels_matrix)` where:
 
-- `sprites`: A collection of key-value pairs (a dictionary) where each key-value pair maps the key (the label of a sprite) to its associated value (a `Sprite` objects);
+- `sprites`: A collection of key-value pairs (a dictionary) where each key-value pair maps the key (the label of a sprite) to its associated value (a `Sprite` object);
 
 - `label_matrix`: A 2D array of integers of equal dimension (width and height) as the original image where the sprites are packed in. The `label_matrix` array maps each pixel of the image passed to the function to the label of the sprite this pixel corresponds to, or `0` if this pixel doesn't belong to a sprite (e.g., transparent color).
 
@@ -292,11 +293,32 @@ Sprite (248): [(286, 378), (368, 482)] 83x105
 
 # Waypoint 4: Draw Sprite Label Bounding Boxes
 
-Write a function `build_sprite_labels_image`
+Write a function `build_sprite_labels_image` that takes two arguments `sprites` and `label_matrix`, the same returned by the function `find_sprites`.
 
-| Sprite Sheet                    | Bounding Boxes                               |
-| ------------------------------- | -------------------------------------------- |
-| ![](optimized_sprite_sheet.png) | ![](optimized_sprite_sheet_bounding_box.png) |
+The function `build_sprite_labels_image` accepts an optional argument `background_color` (either a tuple `(R, G, B)` or a tuple `(R, G, B, A)`) that identifies the color to use as the background of the image to build. If this argument is not passed to the function, the default value `(255, 255, 255)`.
+
+The function `build_sprite_labels_image` returns an image of equal dimension (width and height) as the original image that was passed to the function `find_sprites`.
+
+The function `build_sprite_labels_image` draw the masks the sprite at the exact same position the sprites were in the original image. The function draws each sprite mask with a random uniform color (one color per sprite mask).
+
+For example:
+
+```python
+>>> from PIL import Image
+>>> image = Image.open('optimized_sprite_sheet.png')
+>>> sprites, sprite_mask = find_sprites(image)
+# Draw sprite masks and bounding boxes with the default white background color.
+>>> sprite_label_image = build_sprite_labels_image(sprites, sprite_mask)
+>>> sprite_label_image.save('optimized_sprite_sheet_bounding_box_white_background.png')
+# Draw sprite masks and bounding boxes with a transparent background color.
+>>> sprite_label_image = build_sprite_labels_image(sprites, sprite_mask, background_color=(0, 0, 0, 0))
+>>> sprite_label_image.save('/Users/dcaune/optimized_sprite_sheet_bounding_box_transparent_background.png')
+
+```
+
+| Sprite Masks with White Background                            | Sprite Masks with Transparent Background                            |
+| ------------------------------------------------------------- | ------------------------------------------------------------------- |
+| ![](optimized_sprite_sheet_bounding_box_white_background.png) | ![](optimized_sprite_sheet_bounding_box_transparent_background.png) |
 
 <!--
 # Waypoint: Write a class `SpriteSheet`
