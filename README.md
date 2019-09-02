@@ -197,6 +197,8 @@ The function returns a tuple `(sprites, labels_matrix)` where:
 
 _Note: The sprite labels can be whatever unique strictly positive integers, with no particular order. The index of a sprite has no particular relationship with the position of the sprite in the image._
 
+**WARNING: You are NOT ALLOWED to use any computer vision libraries (e.g. [OpenCV](https://opencv.org/) and others), but image processing (e.g., [Python Image Library](https://python-pillow.org/)) and scientific computing (e.g, [Numpy](https://numpy.org/)) libraries!**
+
 For example, let's consider the image file [sprite_example.png](metal_slug_single_sprite.png) zoomed-in hereafter:
 
 ![](metal_slug_single_sprite_large.png)
@@ -254,37 +256,39 @@ Sprite (1): [(0, 0), (29, 37)] 30x38
 
 Other example with the following image:
 
-![](metal_slug_sprite_standing_stance.png)
+![](optimized_sprite_sheet.png.png)
 
 ```python
 >>> from PIL import Image
->>> image = Image.open('metal_slug_sprite_standing_stance.png')
+>>> image = Image.open('optimized_sprite_sheet.png.png')
 >>> sprites, sprite_mask = find_sprites(image)
 >>> len(sprites)
-3
->>> for sprite_index, sprite in sprites.items():
-...     print(f"Sprite ({sprite_index}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
-Sprite (1): [(4, 2), (33, 39)] 30x38
-Sprite (2): [(35, 2), (63, 39)] 29x38
-Sprite (3): [(64, 2), (92, 39)] 29x38
+22
+>>> for label, sprite in sprites.items():
+... print(f"Sprite ({label}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
+Sprite (25): [(383, 1), (455, 102)] 73x102
+Sprite (43): [(9, 2), (97, 122)] 89x121
+Sprite (26): [(110, 4), (195, 123)] 86x120
+Sprite (46): [(207, 4), (291, 123)] 85x120
+Sprite (16): [(305, 8), (379, 123)] 75x116
+Sprite (53): [(349, 125), (431, 229)] 83x105
+Sprite (61): [(285, 126), (330, 181)] 46x56
+Sprite (100): [(1, 129), (101, 237)] 101x109
+Sprite (106): [(106, 129), (193, 249)] 88x121
+Sprite (93): [(183, 137), (278, 241)] 96x105
+Sprite (95): [(268, 173), (355, 261)] 88x89
+Sprite (178): [(6, 244), (101, 348)] 96x105
+Sprite (185): [(145, 247), (245, 355)] 101x109
+Sprite (141): [(343, 257), (417, 372)] 75x116
+Sprite (169): [(102, 262), (142, 303)] 41x42
+Sprite (188): [(249, 267), (344, 373)] 96x107
+Sprite (192): [(412, 337), (448, 372)] 37x36
+Sprite (256): [(89, 353), (184, 459)] 96x107
+Sprite (234): [(11, 356), (104, 461)] 94x106
+Sprite (207): [(188, 358), (281, 463)] 94x106
+Sprite (229): [(384, 374), (456, 475)] 73x102
+Sprite (248): [(286, 378), (368, 482)] 83x105
 ```
-
-Last example with the following image:
-
-![](islands.png)
-
-```python
->>> image = Image.open('islands.png')
->>> sprites, sprite_mask = find_sprites(image)
->>> len(sprites)
-2
->>> for sprite_index, sprite in sprites.items():
-...    print(f"Sprite ({sprite_index}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
-Sprite (77): [(247, 72), (1343, 1093)] 1097x1022
-Sprite (108): [(1097, 1055), (1341, 1249)] 245x195
-```
-
-**WARNING: You are NOT ALLOWED to use any computer vision libraries (e.g. [OpenCV](https://opencv.org/) and others), but image processing (e.g., [Python Image Library](https://python-pillow.org/)) and scientific computing (e.g, [Numpy](https://numpy.org/)) libraries!**
 
 # Waypoint 4: Draw Sprite Label Bounding Boxes
 
