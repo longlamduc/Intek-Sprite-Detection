@@ -96,7 +96,7 @@ For example:
 152
 ```
 
-_Note 1: Python is an interpreted, high-level, general-purpose programming language. Pure Python code is not great at processing large amount of data. However, Python comes with a large number of libraries written in [`C`](<https://en.wikipedia.org/wiki/C_(programming_language)>) that run very fast: [`Pillow`](https://en.wikipedia.org/wiki/Python_Imaging_Library) for image processing, [`NumPy`](https://en.wikipedia.org/wiki/NumPy) for large multi-dimensional arrays and matrices, etc. You SHOULD intensively use these libraries that extend Python and that allow your Python application to be fast._
+<em>Note 1: Python is an interpreted, high-level, general-purpose programming language. Pure Python code is not great at processing large amount of data. However, Python comes with a large number of libraries written in [`C`](<https://en.wikipedia.org/wiki/C_(programming_language)>) that run very fast: [`Pillow`](https://en.wikipedia.org/wiki/Python_Imaging_Library) for image processing, [`NumPy`](https://en.wikipedia.org/wiki/NumPy) for large multi-dimensional arrays and matrices, etc. You SHOULD intensively use these libraries that extend Python and that allow your Python application to be fast.</em>
 
 _Note 2: You SHOULD [measure the execution time](https://docs.python.org/3.7/library/timeit.html) of your code to check whether it's reasonably fast or if there is space for improvement. For example:_
 
@@ -110,21 +110,25 @@ _Note 2: You SHOULD [measure the execution time](https://docs.python.org/3.7/lib
 
 # Waypoint 2: Write a class `Sprite`
 
-Write a class `Sprite` which constructor takes 4 arguments `x1`, `y1`, `x2`, and `y2` (integers). These arguments are used to initialize some private attributes of the class `Sprite`.
+Write a class `Sprite` which constructor takes 5 arguments `label`, `x1`, `y1`, `x2`, and `y2` (strictly positive integers). These arguments are used to initialize private attributes of the class `Sprite`.
 
-Add the two properties `top_left` and `bottom_right` to the class `Sprite` that correspond to the coordinates `(x1, y1)` (a tuple) of the top-left corner, respectively the coordinates `(x2, y2)` (a tuple) of the right-most corner.
+Add the read-only property `label` to the class `Sprite` that returns the label of the sprite.
+
+Add the two read-only properties `top_left` and `bottom_right` to the class `Sprite` that correspond to the coordinates `(x1, y1)` (a tuple) of the top-left corner, respectively the coordinates `(x2, y2)` (a tuple) of the right-most corner.
 
 For example:
 
 ```python
->>> sprite = Sprite(12, 23, 145, 208)
+>>> sprite = Sprite(1, 12, 23, 145, 208)
+>>> sprite.label
+1
 >>> sprite.top_left
 (12, 23)
 >>> sprite.bottom_right
 (145, 208)
 ```
 
-The constructor of the class `Sprite` raises an exception `ValueError` if one or more of the arguments `x1`, `y1`, `x2`, and `y2` is not positive integer, or if the arguments `x2` and `y2` is not equal or greater respectively than `x1` and `y2`.
+The constructor of the class `Sprite` raises an exception `ValueError` if one or more of the arguments `label`, `x1`, `y1`, `x2`, and `y2` is not positive integer, or if the arguments `x2` and `y2` is not equal or greater respectively than `x1` and `y1`.
 
 For examples:
 
@@ -151,7 +155,7 @@ Add the two properties `width` and `height` that returns respectively the number
 For example:
 
 ```python
->>> sprite = Sprite(12, 23, 145, 208)
+>>> sprite = Sprite(1, 12, 23, 145, 208)
 >>> sprite.width
 134
 >>> sprite.height
@@ -250,6 +254,13 @@ Last example with the following image:
 Sprite (77): [(247, 72), (1343, 1093)] 1097x1022
 Sprite (108): [(1097, 1055), (1341, 1249)] 245x195
 ```
+
+# Waypoint 4: Draw Sprite Label Bounding Boxes
+
+Write a function `build_sprite_labels_image`
+| | |
+| ------------------------------- | -------------------------------------------- |
+| ![](optimized_sprite_sheet.png) | ![](optimized_sprite_sheet_bounding_box.png) |
 
 <!--
 # Waypoint: Write a class `SpriteSheet`
