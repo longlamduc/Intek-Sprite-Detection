@@ -293,7 +293,8 @@ Sprite (248): [(286, 378), (368, 482)] 83x105
 # Waypoint 4: Draw Sprite Label Bounding Boxes
 
 Write a function `build_sprite_labels_image`
-| | |
+
+| Sprite Sheet                    | Bounding Boxes                               |
 | ------------------------------- | -------------------------------------------- |
 | ![](optimized_sprite_sheet.png) | ![](optimized_sprite_sheet_bounding_box.png) |
 
