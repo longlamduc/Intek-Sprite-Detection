@@ -128,7 +128,7 @@ For example:
 (145, 208)
 ```
 
-The constructor of the class `Sprite` raises an exception `ValueError` if one or more of the arguments `label`, `x1`, `y1`, `x2`, and `y2` is not positive integer, or if the arguments `x2` and `y2` is not equal or greater respectively than `x1` and `y1`.
+The constructor of the class `Sprite` raises an exception `ValueError` if one or more arguments `label`, `x1`, `y1`, `x2`, and `y2` is not positive integer, or if the arguments `x2` and `y2` is not equal or greater respectively than `x1` and `y1`.
 
 For examples:
 
@@ -162,65 +162,94 @@ For example:
 186
 ```
 
-# Waypoint 3: Detect Sprites in an Image
+# Waypoint 3: Find Sprites in an Image
 
-We would like to find all the sprites packed in a single picture.
+We would like to identify all the sprites packed in a single picture.
 
-You will need to design and implement an image segmentation algorithm that considers the color of each pixel of a specified picture to determine whether this sprite belongs to a sprite or not:
+You need to implement an [image segmentation algorithm](./b5034b2ce2bdf21e09d3915207d7b824ceb4.pdf) that considers the color of each pixel of a specified picture to determine whether this sprite belongs to a sprite or not:
 
 - pixels which color corresponds to the background color of the picture are considered as transparent, i.e., they don't belong to a sprite;
 - pixels which color is different from the background color of the picture are considered as solid, i.e., they belong to a sprite.
 
-Sprites correspond to smaller images composed of adjacent/[connected pixels](https://en.wikipedia.org/wiki/Pixel_connectivity), meaning that each pixel of the sprite is adjacent to at least one of its direct neighbor pixels ([8-neighborhood](./b5034b2ce2bdf21e09d3915207d7b824ceb4.pdf) connectivity [method](4d991f5902c84c2181c6c573661abdc228b1.pdf)):
+Sprites correspond to smaller images composed of [connected pixels](https://en.wikipedia.org/wiki/Pixel_connectivity), meaning that each pixel of a sprite is adjacent to at least one of its direct neighbor pixels ([8-neighborhood connectivity method](4d991f5902c84c2181c6c573661abdc228b1.pdf)):
 
 |                                                   |                                                                                         |
 | ------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | ![8 Connectivity Pixel](8-connectivity-pixel.png) | ![8 8-neighbor-relative-pixels-coordinates](8-neighbor-relative-pixels-coordinates.png) |
 
-Sprites are represented by their position `(x, y)` in the picture and their size `(width, height)`.
-
 Your image segmentation algorithm needs to isolate each sprite, producing bounding boxes with correct sizes and identifying isolated parts of a sprite as an included segment.
 
-**WARNING: You are NOT ALLOWED to use any computer vision libraries (e.g. [OpenCV](https://opencv.org/) and others), but image processing (e.g., [Python Image Library](https://python-pillow.org/)) and scientific computing (e.g, [Numpy](https://numpy.org/)) libraries!**
-
-Write a function `find_sprites` that takes an argument `image` (a [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object).
+Write a function `find_sprites` that takes an argument `image` (an [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object).
 
 This function accepts an optional argument `transparent_color` (an integer if the image format is grayscale, or a tuple `(red, green, blue)` if the image format is `RGB`) that identifies the transparent color of the image. The function ignores any pixels of the image with this color.
 
 If this argument `transparent_color` is not passed, the function determines the transparent color of the image as follows:
 
 1. The image, such as a PNG file, has an [alpha channel](<https://en.wikipedia.org/wiki/Transparency_(graphic)>): the function ignores all the pixels of the image which alpha component is `255`;
+
 2. The image has no alpha channel: the function identifies the most common color of the image as the transparent color (cf. our function `find_most_common_color`).
 
-The function returns a tuple `(sprites, sprite_mask)`
-where:
+The function returns a tuple `(sprites, labels_matrix)` where:
 
-- `sprites`: A dictionary where each key represents the index (integer strictly positive) of a sprite that has been found, and the respective value references the object `Sprite` of this sprite;
-- `sprite_mask`: A 2D array of integers, which number of rows is equal to the height of the image object passed to the function, and which number of columns is equal to the width of this image. The `sprite_mask` array maps each pixel of the image passed to the function to the index of a sprite this pixel corresponds to, or `0` if this pixel doesn't belong to a sprite (e.g., transparent color).
+- `sprites`: A collection of key-value pairs (a dictionary) where each key-value pair maps the key (the label of a sprite) to its associated value (a `Sprite` objects);
 
-_Note: The sprite indices can be whatever unique strictly positive integers, with no particular order. The index of a sprite has no particular relationship with the position of the sprite in the image._
+- `label_matrix`: A 2D array of integers of equal dimension (width and height) as the original image where the sprites are packed in. The `label_matrix` array maps each pixel of the image passed to the function to the label of the sprite this pixel corresponds to, or `0` if this pixel doesn't belong to a sprite (e.g., transparent color).
 
-For example, let's consider the image file [sprite_example.png](sprite_example.png) zoomed-in hereafter:
+_Note: The sprite labels can be whatever unique strictly positive integers, with no particular order. The index of a sprite has no particular relationship with the position of the sprite in the image._
 
-![](sprite_example_large.png)
+For example, let's consider the image file [sprite_example.png](metal_slug_single_sprite.png) zoomed-in hereafter:
+
+![](metal_slug_single_sprite_large.png)
 
 ```python
 >>> from PIL import Image
->>> image = Image.open('sprite_example.png')
->>> sprites, sprite_mask = find_sprites(image, transparent_color=(255, 255, 255))
+>>> image = Image.open('metal_slug_single_sprite.png')
+>>> sprites, label_matrix = find_sprites(image, transparent_color=(255, 255, 255))
 >>> len(sprites)
 1
->>> for sprite_index, sprite in sprites.items():
-...     print(f"Sprite ({sprite_index}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
-Sprite (4): [(0, 0), (4, 5)] 5x6
+>>> for label, sprite in sprites.items():
+...     print(f"Sprite ({label}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
+Sprite (1): [(0, 0), (29, 37)] 30x38
 >>> import pprint
->>> pprint.pprint(sprite_mask)
-[[4, 0, 4, 0, 4],
- [4, 4, 0, 0, 4],
- [0, 0, 4, 4, 4],
- [4, 0, 0, 0, 4],
- [0, 4, 4, 0, 4],
- [0, 0, 0, 4, 0]]
+>>> pprint.pprint(label_matrix, width=120)
+[[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+ [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+ [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+ [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+ [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+ [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
+ [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0],
+ [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
+ [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
 ```
 
 Other example with the following image:
@@ -254,6 +283,8 @@ Last example with the following image:
 Sprite (77): [(247, 72), (1343, 1093)] 1097x1022
 Sprite (108): [(1097, 1055), (1341, 1249)] 245x195
 ```
+
+**WARNING: You are NOT ALLOWED to use any computer vision libraries (e.g. [OpenCV](https://opencv.org/) and others), but image processing (e.g., [Python Image Library](https://python-pillow.org/)) and scientific computing (e.g, [Numpy](https://numpy.org/)) libraries!**
 
 # Waypoint 4: Draw Sprite Label Bounding Boxes
 
