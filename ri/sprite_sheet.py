@@ -29,18 +29,54 @@ NEIGHBOR_PIXEL_RELATIVE_COORDINATES = ((-1, -1), (0, -1), (1, -1), (-1, 0))
 
 
 class Sprite:
-    def __init__(self, x1, y1, x2, y2):
-        """
+    """
+    Represent the identification and the position of a sprite packed in a
+    picture with other sprites.
 
-        :param top_left: Coordinates of the top-left corner.
+    A sprite is identified with a unique label (a strictly positive
+    integer).
 
-        :param bottom_right: Coordinates of the right-most corner.
+    The location of a sprite is defined with a bounding box (top-left and
+    bottom-right) of the contour of the sprite.
+    """
+    def __init__(self, label, x1, y1, x2, y2):
         """
+        Build a new `Sprite` object.
+
+        The coordinates of the top-left and bottom-right corners of the sprite
+        are related to the top-left corner of the picture this sprite is
+        packed in.
+
+
+        :param label: Label of this sprite. This label MUST be unique among
+            all the sprites packed in a picture.
+
+        :param x1: Abscissa of the top-left corner.
+
+        :param y1: Ordinate of the top-left corner of the bounding box of this
+            sprite.
+
+        :param x2: Abscissa of the bottom-right corner of the bounding box of
+            this sprite.
+
+        :param y2: Ordinate of the bottom-left corner of the bounding box of
+            this sprite.
+
+
+        :raise ValueError: If the specified coordinates of the sprite's
+            bounding box are invalid.  These coordinates MUST all be positive
+            integer values; the coordinates of the top-left corner MUST be on
+            the top or the left of the coordinates of the bottom-right corner.
+        """
+        if not isinstance(label, int) or label < 0:
+            raise ValueError('Invalid coordinates')
+
         if not isinstance(x1, int) or not isinstance(y1, int) or \
            not isinstance(x2, int) or not isinstance(y2, int) or \
            x1 < 0 or y1 < 0 or x2 < 0 or y2 < 0 or x1 > x2 or y1 > y2:
             raise ValueError('Invalid coordinates')
 
+        self.__label = label
         self.__x1 = x1
         self.__y1 = y1
         self.__x2 = x2
@@ -54,6 +90,9 @@ class Sprite:
     def height(self):
         return self.__y2 - self.__y1 + 1
 
+    @property
+    def label(self):
+        return self.__label
 
     @property
     def width(self):
@@ -341,7 +380,6 @@ def find_most_common_color(image):
     return most_common_color
 
 
-
 def find_sprites(image, transparent_color=None):
     def __link_sprites(id1, id2):
         """
@@ -431,48 +469,52 @@ def find_sprites(image, transparent_color=None):
     return __merge_sprite_links()
 
 
-
-
-
-def save_mask_image(file_path_name, image_mask, background_color=None, display_bounding_box=False, sprites=None):
-    sprite_indices = set([
-        color
+def build_sprite_labels_image(sprites, image_mask, background_color=None, display_bounding_boxes=False):
+    # @todo: simplify with the list of Sprites object that MUST include the sprite label.
+    sprite_labels = set([
+        label
         for row in image_mask
-        for color in row])
+        for label in row])
 
-    sprites_color = {
-        0: background_color and (255, 255, 255)
+    # Randomly generate RGB colors for each sprite label using the specified
+    # color (or White, if not defined) for the background.
+    sprite_label_colors = {
+        0: background_color or (255, 255, 255)
     }
 
-    for sprite_index in sprite_indices:
-        sprites_color[sprite_index] = (random.randint(64, 200), random.randint(64, 200), random.randint(64, 200))
+    for label in list(sprite_labels)[1:]: # @todo: background color should not be in the sprite labels!
+        sprite_label_colors[label] = (random.randint(64, 200), random.randint(64, 200), random.randint(64, 200))
 
+    # Build the image with the sprite label's color.
     pixels = numpy.asarray([
-        [sprites_color[c] if c else (255, 255, 255) for c in row]
+        [sprite_label_colors[label] for label in row]
         for row in image_mask],
         dtype=numpy.uint8)
 
     image = Image.fromarray(pixels, 'RGB')
 
-    if display_bounding_box:
+    # Draw the bounding boxes surrounding the sprites.
+    if display_bounding_boxes:
         draw = ImageDraw.Draw(image)
 
-        for sprite_index in sprites:
-            sprite = sprites[sprite_index]
-            color = sprites_color[sprite_index]
-            color += (128,)
+        for label in sprites:
+            sprite = sprites[label]
+            color = sprite_label_colors[label]
+            color = (0,0,0)
             draw.rectangle((sprite.top_left, sprite.bottom_right), outline=color, width=1)
 
-    image.save(file_path_name)
+    return image
 
 
-image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/islands.png')
+image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/optimized_sprite_sheet.png')
 sprites, sprite_mask = find_sprites(image)
 len(sprites)
 for sprite_index, sprite in sprites.items():
     print(f"Sprite ({sprite_index}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
 
+sprite_label_image = build_sprite_labels_image(
+    sprites,
+    sprite_mask,
+    display_bounding_boxes=True)
 
-
-
-save_mask_image('/Users/dcaune/foo.png', image_mask, display_bounding_box=True, sprites=sprites)
+sprite_label_image.save('/Users/dcaune/optimized_sprite_sheet_bounding_box.png')
