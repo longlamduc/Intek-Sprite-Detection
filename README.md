@@ -261,7 +261,7 @@ Other example with the following image:
 ```python
 >>> from PIL import Image
 >>> image = Image.open('optimized_sprite_sheet.png.png')
->>> sprites, sprite_mask = find_sprites(image)
+>>> sprites, label_matrix = find_sprites(image)
 >>> len(sprites)
 22
 >>> for label, sprite in sprites.items():
