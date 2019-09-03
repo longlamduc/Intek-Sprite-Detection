@@ -266,7 +266,7 @@ Other example with the following image:
 >>> len(sprites)
 22
 >>> for label, sprite in sprites.items():
-... print(f"Sprite ({label}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
+...     print(f"Sprite ({label}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
 Sprite (25): [(383, 1), (455, 102)] 73x102
 Sprite (43): [(9, 2), (97, 122)] 89x121
 Sprite (26): [(110, 4), (195, 123)] 86x120
