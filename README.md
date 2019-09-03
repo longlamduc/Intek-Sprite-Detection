@@ -190,7 +190,7 @@ If this argument `transparent_color` is not passed, the function determines the 
 
 2. The image has no alpha channel: the function identifies the most common color of the image as the transparent color (cf. our function `find_most_common_color`).
 
-The function returns a tuple `(sprites, labels_matrix)` where:
+The function returns a tuple `(sprites, label_map)` where:
 
 - `sprites`: A collection of key-value pairs (a dictionary) where each key-value pair maps the key (the label of a sprite) to its associated value (a `Sprite` object);
 
@@ -293,7 +293,7 @@ Sprite (248): [(286, 378), (368, 482)] 83x105
 
 # Waypoint 4: Draw Sprite Label Bounding Boxes
 
-Write a function `create_sprite_labels_image` that takes two arguments `sprites` and `labels`, the same returned by the function `find_sprites`.
+Write a function `create_sprite_labels_image` that takes two arguments `sprites` and `label_map`, the same returned by the function `find_sprites`.
 
 The function `create_sprite_labels_image` accepts an optional argument `background_color` (either a tuple `(R, G, B)` or a tuple `(R, G, B, A)`) that identifies the color to use as the background of the image to create. If this argument is not passed to the function, the default value `(255, 255, 255)`.
 
