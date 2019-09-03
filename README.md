@@ -194,7 +194,7 @@ The function returns a tuple `(sprites, labels_matrix)` where:
 
 - `sprites`: A collection of key-value pairs (a dictionary) where each key-value pair maps the key (the label of a sprite) to its associated value (a `Sprite` object);
 
-- `label_matrix`: A 2D array of integers of equal dimension (width and height) as the original image where the sprites are packed in. The `label_matrix` array maps each pixel of the image passed to the function to the label of the sprite this pixel corresponds to, or `0` if this pixel doesn't belong to a sprite (e.g., transparent color).
+- `labels`: A 2D array of integers of equal dimension (width and height) as the original image where the sprites are packed in. The `labels` array maps each pixel of the image passed to the function to the label of the sprite this pixel corresponds to, or `0` if this pixel doesn't belong to a sprite (e.g., transparent color).
 
 _Note: The sprite labels can be whatever unique strictly positive integers, with no particular order. The index of a sprite has no particular relationship with the position of the sprite in the image._
 
@@ -207,14 +207,14 @@ For example, let's consider the image file [sprite_example.png](metal_slug_singl
 ```python
 >>> from PIL import Image
 >>> image = Image.open('metal_slug_single_sprite.png')
->>> sprites, label_matrix = find_sprites(image, transparent_color=(255, 255, 255))
+>>> sprites, labels = find_sprites(image, transparent_color=(255, 255, 255))
 >>> len(sprites)
 1
 >>> for label, sprite in sprites.items():
 ...     print(f"Sprite ({label}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
 Sprite (1): [(0, 0), (29, 37)] 30x38
 >>> import pprint
->>> pprint.pprint(label_matrix, width=120)
+>>> pprint.pprint(labels, width=120)
 [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0],
  [0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0],
  [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0],
@@ -262,7 +262,7 @@ Other example with the following image:
 ```python
 >>> from PIL import Image
 >>> image = Image.open('optimized_sprite_sheet.png.png')
->>> sprites, label_matrix = find_sprites(image)
+>>> sprites, labels = find_sprites(image)
 >>> len(sprites)
 22
 >>> for label, sprite in sprites.items():
@@ -293,27 +293,26 @@ Sprite (248): [(286, 378), (368, 482)] 83x105
 
 # Waypoint 4: Draw Sprite Label Bounding Boxes
 
-Write a function `build_sprite_labels_image` that takes two arguments `sprites` and `label_matrix`, the same returned by the function `find_sprites`.
+Write a function `create_sprite_labels_image` that takes two arguments `sprites` and `labels`, the same returned by the function `find_sprites`.
 
-The function `build_sprite_labels_image` accepts an optional argument `background_color` (either a tuple `(R, G, B)` or a tuple `(R, G, B, A)`) that identifies the color to use as the background of the image to build. If this argument is not passed to the function, the default value `(255, 255, 255)`.
+The function `create_sprite_labels_image` accepts an optional argument `background_color` (either a tuple `(R, G, B)` or a tuple `(R, G, B, A)`) that identifies the color to use as the background of the image to create. If this argument is not passed to the function, the default value `(255, 255, 255)`.
 
-The function `build_sprite_labels_image` returns an image of equal dimension (width and height) as the original image that was passed to the function `find_sprites`.
+The function `create_sprite_labels_image` returns an image of equal dimension (width and height) as the original image that was passed to the function `find_sprites`.
 
-The function `build_sprite_labels_image` draw the masks the sprite at the exact same position the sprites were in the original image. The function draws each sprite mask with a random uniform color (one color per sprite mask).
+The function `create_sprite_labels_image` draws the masks of the sprites at the exact same position that the sprites were in the original image. The function draws each sprite mask with a random uniform color (one color per sprite mask). The function also draws a rectangle (bounding box) around each sprite mask, of the same color used for drawing the sprite mask.
 
 For example:
 
 ```python
 >>> from PIL import Image
 >>> image = Image.open('optimized_sprite_sheet.png')
->>> sprites, sprite_mask = find_sprites(image)
-# Draw sprite masks and bounding boxes with the default white background color.
->>> sprite_label_image = build_sprite_labels_image(sprites, sprite_mask)
+>>> sprites, labels = find_sprites(image)
+>>> # Draw sprite masks and bounding boxes with the default white background color.
+>>> sprite_label_image = create_sprite_labels_image(sprites, sprite_mask)
 >>> sprite_label_image.save('optimized_sprite_sheet_bounding_box_white_background.png')
-# Draw sprite masks and bounding boxes with a transparent background color.
->>> sprite_label_image = build_sprite_labels_image(sprites, sprite_mask, background_color=(0, 0, 0, 0))
->>> sprite_label_image.save('/Users/dcaune/optimized_sprite_sheet_bounding_box_transparent_background.png')
-
+>>> # Draw sprite masks and bounding boxes with a transparent background color.
+>>> sprite_label_image = create_sprite_labels_image(sprites, sprite_mask, background_color=(0, 0, 0, 0))
+>>> sprite_label_image.save('optimized_sprite_sheet_bounding_box_transparent_background.png')
 ```
 
 | Sprite Masks with White Background                            | Sprite Masks with Transparent Background                            |
