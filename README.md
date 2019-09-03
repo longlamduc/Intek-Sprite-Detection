@@ -295,7 +295,7 @@ Sprite (248): [(286, 378), (368, 482)] 83x105
 
 Write a function `create_sprite_labels_image` that takes two arguments `sprites` and `label_map`, the same returned by the function `find_sprites`.
 
-The function `create_sprite_labels_image` accepts an optional argument `background_color` (either a tuple `(R, G, B)` or a tuple `(R, G, B, A)`) that identifies the color to use as the background of the image to create. If this argument is not passed to the function, the default value `(255, 255, 255)`.
+The function `create_sprite_labels_image` accepts an optional argument `background_color` (either a tuple `(R, G, B)` or a tuple `(R, G, B, A)`) that identifies the color to use as the background of the image to create. If this argument is not passed to the function, the default value is `(255, 255, 255)`.
 
 The function `create_sprite_labels_image` returns an image of equal dimension (width and height) as the original image that was passed to the function `find_sprites`.
 
