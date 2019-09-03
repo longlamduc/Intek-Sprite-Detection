@@ -194,7 +194,7 @@ The function returns a tuple `(sprites, labels_matrix)` where:
 
 - `sprites`: A collection of key-value pairs (a dictionary) where each key-value pair maps the key (the label of a sprite) to its associated value (a `Sprite` object);
 
-- `labels`: A 2D array of integers of equal dimension (width and height) as the original image where the sprites are packed in. The `labels` array maps each pixel of the image passed to the function to the label of the sprite this pixel corresponds to, or `0` if this pixel doesn't belong to a sprite (e.g., transparent color).
+- `label_map`: A 2D array of integers of equal dimension (width and height) as the original image where the sprites are packed in. The `label_map` array maps each pixel of the image passed to the function to the label of the sprite this pixel corresponds to, or `0` if this pixel doesn't belong to a sprite (e.g., transparent color).
 
 _Note: The sprite labels can be whatever unique strictly positive integers, with no particular order. The index of a sprite has no particular relationship with the position of the sprite in the image._
 
@@ -207,14 +207,14 @@ For example, let's consider the image file [sprite_example.png](metal_slug_singl
 ```python
 >>> from PIL import Image
 >>> image = Image.open('metal_slug_single_sprite.png')
->>> sprites, labels = find_sprites(image, transparent_color=(255, 255, 255))
+>>> sprites, label_map = find_sprites(image, transparent_color=(255, 255, 255))
 >>> len(sprites)
 1
 >>> for label, sprite in sprites.items():
 ...     print(f"Sprite ({label}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
 Sprite (1): [(0, 0), (29, 37)] 30x38
 >>> import pprint
->>> pprint.pprint(labels, width=120)
+>>> pprint.pprint(label_map, width=120)
 [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0],
  [0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0],
  [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0],
@@ -262,7 +262,7 @@ Other example with the following image:
 ```python
 >>> from PIL import Image
 >>> image = Image.open('optimized_sprite_sheet.png.png')
->>> sprites, labels = find_sprites(image)
+>>> sprites, label_map = find_sprites(image)
 >>> len(sprites)
 22
 >>> for label, sprite in sprites.items():
@@ -306,12 +306,12 @@ For example:
 ```python
 >>> from PIL import Image
 >>> image = Image.open('optimized_sprite_sheet.png')
->>> sprites, labels = find_sprites(image)
+>>> sprites, label_map = find_sprites(image)
 >>> # Draw sprite masks and bounding boxes with the default white background color.
->>> sprite_label_image = create_sprite_labels_image(sprites, sprite_mask)
+>>> sprite_label_image = create_sprite_labels_image(sprites, label_map)
 >>> sprite_label_image.save('optimized_sprite_sheet_bounding_box_white_background.png')
 >>> # Draw sprite masks and bounding boxes with a transparent background color.
->>> sprite_label_image = create_sprite_labels_image(sprites, sprite_mask, background_color=(0, 0, 0, 0))
+>>> sprite_label_image = create_sprite_labels_image(sprites, label_map, background_color=(0, 0, 0, 0))
 >>> sprite_label_image.save('optimized_sprite_sheet_bounding_box_transparent_background.png')
 ```
 
@@ -319,7 +319,6 @@ For example:
 | ------------------------------------------------------------- | ------------------------------------------------------------------- |
 | ![](optimized_sprite_sheet_bounding_box_white_background.png) | ![](optimized_sprite_sheet_bounding_box_transparent_background.png) |
 
-<!--
 # Waypoint: Write a class `SpriteSheet`
 
 Write a class `SpriteSheet` which constructor accepts an argument `image` that corresponds to either:
@@ -334,4 +333,4 @@ This constructor also accepts an optional argument `transparent_color` that iden
 - an integer if the mode is grayscale;
 - a tuple `(red, green, blue)` of integers if the mode is `RGB`;
 - a tuple `(red, green, blue, alpha)` of integers if the mode is `RGBA`. The `alpha` element is optional. If not defined, while the image mode is `RGBA`, the constructor considers the `alpha` element to be `255`.
--->
+  -->

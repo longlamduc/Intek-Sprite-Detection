@@ -384,14 +384,15 @@ def find_sprites(image, transparent_color=None):
         Link the two specified labels that identify connected parts of a same
         sprite.
 
+
         :param label1: A first label.
 
         :param label2: An second label equivalent to the first label passed to
             this function.
         """
-        sprite_indices = linked_labels[label1] + linked_labels[label2]
-        for sprite_index in sprite_indices:
-            linked_labels[sprite_index] = sprite_indices
+        unified_labels = linked_labels[label1] + linked_labels[label2]
+        for label in unified_labels:
+            linked_labels[label] = unified_labels
 
     def __merge_linked_labels():
         """
@@ -406,11 +407,11 @@ def find_sprites(image, transparent_color=None):
               value (a `Sprite` object).  Each connected fragment of a sprite has
               been unified to one sprite.
 
-            * `labels`: A 2D array of integers of equal dimension (width and height)
-              as the original image where the sprites are packed in. This array
-              maps each pixel of the original image to the label of the sprite this
-              pixel corresponds to, or `0` if this pixel doesn't belong to a sprite
-              (e.g., transparent color).
+            * `label_map`: A 2D array of integers of equal dimension (width and
+              height) as the original image where the sprites are packed in.  This
+              array maps each pixel of the original image to the label of the sprite
+              this pixel corresponds to, or `0` if this pixel doesn't belong to a
+              sprite (e.g., transparent color).
         """
         # Reduce each group of equivalence labels (each referencing connected
         # parts of a sprite) to one label only, the first in the list.
@@ -421,15 +422,16 @@ def find_sprites(image, transparent_color=None):
         # Create a new a 2D array of integers that maps each pixel of the to
         # the unified label of the sprite this pixel corresponds to, or `0` if
         # this pixel doesn't belong to a sprite (e.g., transparent color).
-        unified_labels = [
+        unified_label_map = [
             [label and primary_labels[label] for label in row]
-            for row in pixel_labels]
+            for row in label_map]
 
         # Determine the list of pixels mapped to each unique label.
         label_pixels_coordinates = collections.defaultdict(list)
-        for y, row in enumerate(unified_labels):
+        for y, row in enumerate(unified_label_map):
             for x, label in enumerate(row):
-                label_pixels_coordinates[label].append((x, y))
+                if label:
+                    label_pixels_coordinates[label].append((x, y))
 
         # Build the list of sprites (which connected parts have been reunified)
         # and calculate their respective bounding box.
@@ -447,7 +449,7 @@ def find_sprites(image, transparent_color=None):
 
             sprites[label] = Sprite(label, x1, y1, x2, y2)
 
-        return sprites, unified_labels
+        return sprites, unified_label_map
 
     # Determine the transparent color if not specified by the caller.
     if transparent_color is None:
@@ -461,7 +463,7 @@ def find_sprites(image, transparent_color=None):
     # the label of the sprite this pixel corresponds to, or `0` if this
     # pixel doesn't belong to a sprite (e.g., transparent color).
     image_width, image_height = image.size
-    pixel_labels = numpy.asarray([[0] * image_width] * image_height)
+    label_map = numpy.asarray([[0] * image_width] * image_height)
 
     # Generator of label identifiers to map with pixels that are part of a
     # sprite (e.g., pixel that are not considered as transparent, that do
@@ -479,35 +481,47 @@ def find_sprites(image, transparent_color=None):
 
     for y in range(image_height):
         for x in range(image_width):
-            if tuple(pixels[y][x]) != transparent_color:  # @todo: convert `transparent_color` to a numpy.ndarray
+            # Ignore transparent pixel (i.e., pixel which value corresponds to the
+            # background color).
+            #
+            # @note: The code of this test is a lot faster than using the function
+            #     `numpy.array_equal`:
+            #
+            #     ```python
+            #     >>> timeit.timeit(stmt='tuple(pixels) == transparent_color', setup='import numpy; pixels = numpy.asarray([0, 0, 0]); transparent_color = (255,255,255)', number=1000000)
+            #     1.4233526739990339
+            #     >>> timeit.timeit(stmt='numpy.array_equal(pixels, transparent_color)', setup='import numpy; pixels = numpy.asarray([0, 0, 0]); transparent_color = [255,255,255]', number=1000000)
+            #     7.9941349439977785
+            if tuple(pixels[y][x]) != transparent_color:
                 # Label associated to this pixel. Initially no label.
                 pixel_label = 0
 
                 for dx, dy in NEIGHBOR_PIXEL_RELATIVE_COORDINATES:
                     # Check whether a neighbor pixel belongs to a sprite.
-                    if 0 <= x + dx < image_width and y + dy >= 0 and pixel_labels[y + dy][x + dx] > 0:
+                    if 0 <= x + dx < image_width and y + dy >= 0 and label_map[y + dy][x + dx] > 0:
                         # If the current pixel has been already associated to a label, check
                         # whether the neighbor pixel has the same label, and if not, link these
                         # labels and their equivalent labels all together.
-                        if pixel_label and pixel_label != pixel_labels[y + dy][x + dx] and \
-                           pixel_labels[y + dy][x + dx] not in linked_labels[pixel_label]:
-                            __link_labels(pixel_label, pixel_labels[y + dy][x + dx])
+                        if pixel_label and pixel_label != label_map[y + dy][x + dx] and \
+                           label_map[y + dy][x + dx] not in linked_labels[pixel_label]:
+                            __link_labels(pixel_label, label_map[y + dy][x + dx])
 
-                        pixel_label = pixel_labels[y + dy][x + dx]
+                        pixel_label = label_map[y + dy][x + dx]
 
                 # If the pixel is not connected to a neighbor pixel, generate a new
                 # label. Map the pixel to the associated label.
-                if pixel_label == 0:
+                if pixel_label:
+                    label_map[y][x] = pixel_label
+                else:
                     current_label += 1
-                    pixel_labels[y][x] = current_label
+                    pixel_label = current_label
                     linked_labels[current_label] = [current_label]
-
-                pixel_labels[y][x] = pixel_label
+                    label_map[y][x] = current_label
 
     return __merge_linked_labels()
 
 
-def create_sprite_labels_image(sprites, label_matrix, background_color=None):
+def create_sprite_labels_image(sprites, label_map, background_color=None):
     """
     Create a new image, drawing the masks of the sprites at the exact same
     position that the sprites were in the original image.
@@ -522,8 +536,8 @@ def create_sprite_labels_image(sprites, label_matrix, background_color=None):
         each key-value pair maps the key (the label of a sprite) to its
         associated value (a `Sprite` object).
 
-    :param label_matrix: A 2D array of integers of equal dimension (width
-        and height) as the original image where the sprites are packed in.
+    :param label_map: A 2D array of integers of equal dimension (width and
+        height) as the original image where the sprites are packed in.
         The `label_matrix` array maps each pixel of the image passed to
         the function to the label of the sprite this pixel corresponds to,
         or `0` if this pixel doesn't belong to a sprite (e.g., transparent
@@ -547,23 +561,17 @@ def create_sprite_labels_image(sprites, label_matrix, background_color=None):
     if background_color is None:
         background_color = (255, 255, 255)
 
-    # @todo: simplify with the list of Sprites object that MUST include the sprite label.
-    sprite_labels = set([
-        label
-        for row in label_matrix
-        for label in row])
-
     # Randomly generate RGB colors for each sprite label using the specified
     # color (or White, if not defined) for the background.
     sprite_label_colors = {0: background_color}
 
-    for label in list(sprite_labels)[1:]: # @todo: background color should not be in the sprite labels!
+    for label in list(sprites.keys()):
         sprite_label_colors[label] = tuple([random.randint(64, 200) for c in range(len(background_color))])
 
     # Build the image with the sprite label's color.
     pixels = numpy.asarray([
         [sprite_label_colors[label] for label in row]
-        for row in label_matrix],
+        for row in label_map],
         dtype=numpy.uint8)
 
     image = Image.fromarray(pixels, 'RGB' if len(background_color) == 3 else 'RGBA')
@@ -580,14 +588,8 @@ def create_sprite_labels_image(sprites, label_matrix, background_color=None):
 
 
 
-image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/islands.png')
-sprites, labels = find_sprites(image)
-sprite_label_image = create_sprite_labels_image(sprites, labels)
-import pprint
-pprint.pprint(labels, width=120)
-sprite_label_image = create_sprite_labels_image(sprites, labels)
-sprite_label_image.save('/Users/dcaune/islands.png')
-
-sprite_label_image = create_sprite_labels_image(sprites, labels, background_color=(0, 0, 0, 0))
-sprite_label_image.save('/Users/dcaune/optimized_sprite_sheet_bounding_box_transparent_background.png')
+image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/metal_slug_sprite_standing_stance.png')
+sprites, label_map = find_sprites(image)
+sprite_label_image = create_sprite_labels_image(sprites, label_map)
+sprite_label_image.save('/Users/dcaune/foo.png')
 
