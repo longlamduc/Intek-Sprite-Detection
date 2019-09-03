@@ -136,17 +136,15 @@ class SpriteSheet:
         if transparent_color is None:
             transparent_color = find_most_common_color(self.__image)
 
-        print(transparent_color)
-
         # Convert the image into an array for faster access.
         image_pixels = numpy.asarray(self.__image)
 
-        # Build the mask of the image used to store the sprite index for each
+        # Build the mask of the image used to store the sprite label for each
         # pixel of the given image.  The image mask is initially empty.
         image_width, image_height = self.__image.size
         image_mask = numpy.asarray([[0] * image_width] * image_height)
 
-        # Start sprite index with `1`; the value `0` for the sprite index of a
+        # Start sprite label with `1`; the value `0` for the sprite label of a
         # pixel in the image mask means that this pixel doesn't belongs to any
         # sprite (e.g., this is a transparent pixel).
         sprite_index = 1
@@ -381,140 +379,215 @@ def find_most_common_color(image):
 
 
 def find_sprites(image, transparent_color=None):
-    def __link_sprites(id1, id2):
+    def __link_labels(label1, label2):
         """
-        Link the two sprites, and all the other sprites connected to them.
+        Link the two specified labels that identify connected parts of a same
+        sprite.
 
-        :param id1:
+        :param label1: A first label.
 
-        :param id2:
+        :param label2: An second label equivalent to the first label passed to
+            this function.
         """
-        sprite_indices = sprites_links[id1] + sprites_links[id2]
+        sprite_indices = linked_labels[label1] + linked_labels[label2]
         for sprite_index in sprite_indices:
-            sprites_links[sprite_index] = sprite_indices
+            linked_labels[sprite_index] = sprite_indices
 
-    def __merge_sprite_links():
-        sprites_primary_index = {}
-        for sprite_index, linked_sprites_indices in sprites_links.items():
-            sprites_primary_index[sprite_index] = linked_sprites_indices[0]
+    def __merge_linked_labels():
+        """
+        Merge the equivalence labels together and unify all the connected
+        fragments of a sprite to one sprite.
 
-        unified_image_mask = [
-            [color and sprites_primary_index[color] for color in row]
-            for row in image_mask]
 
-        foo = collections.defaultdict(list)
-        for y, row in enumerate(unified_image_mask):
-            for x, sprite_index in enumerate(row):
-                foo[sprite_index].append((x, y))
+        :return: A tuple `(sprites, labels)` where:
 
+            * `sprites`: A collection of key-value pairs (a dictionary) where each
+              key-value pair maps the key (the label of a sprite) to its associated
+              value (a `Sprite` object).  Each connected fragment of a sprite has
+              been unified to one sprite.
+
+            * `labels`: A 2D array of integers of equal dimension (width and height)
+              as the original image where the sprites are packed in. This array
+              maps each pixel of the original image to the label of the sprite this
+              pixel corresponds to, or `0` if this pixel doesn't belong to a sprite
+              (e.g., transparent color).
+        """
+        # Reduce each group of equivalence labels (each referencing connected
+        # parts of a sprite) to one label only, the first in the list.
+        primary_labels = {}
+        for label, equivalence_labels in linked_labels.items():
+            primary_labels[label] = equivalence_labels[0]
+
+        # Create a new a 2D array of integers that maps each pixel of the to
+        # the unified label of the sprite this pixel corresponds to, or `0` if
+        # this pixel doesn't belong to a sprite (e.g., transparent color).
+        unified_labels = [
+            [label and primary_labels[label] for label in row]
+            for row in pixel_labels]
+
+        # Determine the list of pixels mapped to each unique label.
+        label_pixels_coordinates = collections.defaultdict(list)
+        for y, row in enumerate(unified_labels):
+            for x, label in enumerate(row):
+                label_pixels_coordinates[label].append((x, y))
+
+        # Build the list of sprites (which connected parts have been reunified)
+        # and calculate their respective bounding box.
         sprites = {}
 
-        for sprite_index in foo:
-            if sprite_index:
-                x1 = y1 = sys.maxsize
-                x2 = y2 = 0
-                for x, y in foo[sprite_index]:
-                    if x < x1: x1 = x
-                    if x > x2: x2 = x
-                    if y < y1: y1 = y
-                    if y > y2: y2 = y
-                sprites[sprite_index] = Sprite(x1, y1, x2, y2)
+        for label in label_pixels_coordinates:
+            x1 = y1 = sys.maxsize
+            x2 = y2 = 0
 
-        return sprites, unified_image_mask
+            for x, y in label_pixels_coordinates[label]:
+                if x < x1: x1 = x
+                if x > x2: x2 = x
+                if y < y1: y1 = y
+                if y > y2: y2 = y
 
+            sprites[label] = Sprite(label, x1, y1, x2, y2)
+
+        return sprites, unified_labels
 
     # Determine the transparent color if not specified by the caller.
     if transparent_color is None:
         transparent_color = find_most_common_color(image)
 
     # Convert the image into an array for faster access.
-    image_pixels = numpy.asarray(image)
+    pixels = numpy.asarray(image)
 
-    # Build the mask of the image used to store the sprite index for each
-    # pixel of the given image.  The image mask is initially empty.
+    # Create a 2D array of integers of equal dimension (width and height) as
+    # the image passed to the function. This array maps each pixel of the to
+    # the label of the sprite this pixel corresponds to, or `0` if this
+    # pixel doesn't belong to a sprite (e.g., transparent color).
     image_width, image_height = image.size
-    image_mask = numpy.asarray([[0] * image_width] * image_height)
+    pixel_labels = numpy.asarray([[0] * image_width] * image_height)
 
-    # Start sprite index with `1`; the value `0` for the sprite index of a
-    # pixel in the image mask means that this pixel doesn't belongs to any
-    # sprite (e.g., this is a transparent pixel).
-    sprite_index = 1
+    # Generator of label identifiers to map with pixels that are part of a
+    # sprite (e.g., pixel that are not considered as transparent, that do
+    # not belong to the background color).
+    current_label = 0
 
-    sprites_links = {}
+    # Table of label equivalence (a dictionary) to keep note of which labels
+    # refer to the same sprite when two parts of a sprite eventually connect.
+    # If a pixel has multiple neighbors with different labels, the algorithm
+    # assigns for that pixel the first label found and indicate that all
+    # the other ones are equivalent. The filled table contains every label
+    # (the key) in the image and the labels (the associated value) from
+    # their surrounding neighbors too.
+    linked_labels = {}
 
     for y in range(image_height):
         for x in range(image_width):
-            if tuple(image_pixels[y][x]) != transparent_color:  # @todo: convert `transparent_color` to a numpy.ndarray
+            if tuple(pixels[y][x]) != transparent_color:  # @todo: convert `transparent_color` to a numpy.ndarray
+                # Label associated to this pixel. Initially no label.
+                pixel_label = 0
 
-                pixel_sprite_index = 0
                 for dx, dy in NEIGHBOR_PIXEL_RELATIVE_COORDINATES:
                     # Check whether a neighbor pixel belongs to a sprite.
-                    if 0 <= x + dx < image_width and y + dy >= 0 and image_mask[y + dy][x + dx] > 0:
-                        # If the current pixel has been already associated to a sprite, check
-                        # whether the neighbor pixel belongs to this same sprite, and if not,
-                        # merge those two sprites together.
-                        if pixel_sprite_index and pixel_sprite_index != image_mask[y + dy][x + dx] \
-                                and image_mask[y + dy][x + dx] not in sprites_links[pixel_sprite_index]:
-                            __link_sprites(pixel_sprite_index, image_mask[y + dy][x + dx])
+                    if 0 <= x + dx < image_width and y + dy >= 0 and pixel_labels[y + dy][x + dx] > 0:
+                        # If the current pixel has been already associated to a label, check
+                        # whether the neighbor pixel has the same label, and if not, link these
+                        # labels and their equivalent labels all together.
+                        if pixel_label and pixel_label != pixel_labels[y + dy][x + dx] and \
+                           pixel_labels[y + dy][x + dx] not in linked_labels[pixel_label]:
+                            __link_labels(pixel_label, pixel_labels[y + dy][x + dx])
 
-                        pixel_sprite_index = image_mask[y + dy][x + dx]
+                        pixel_label = pixel_labels[y + dy][x + dx]
 
-                image_mask[y][x] = pixel_sprite_index
+                # If the pixel is not connected to a neighbor pixel, generate a new
+                # label. Map the pixel to the associated label.
+                if pixel_label == 0:
+                    current_label += 1
+                    pixel_labels[y][x] = current_label
+                    linked_labels[current_label] = [current_label]
 
-                if pixel_sprite_index == 0:
-                    image_mask[y][x] = sprite_index
-                    sprites_links[sprite_index] = [sprite_index]
-                    sprite_index += 1
+                pixel_labels[y][x] = pixel_label
 
-    return __merge_sprite_links()
+    return __merge_linked_labels()
 
 
-def build_sprite_labels_image(sprites, image_mask, background_color=None, display_bounding_boxes=False):
+def create_sprite_labels_image(sprites, label_matrix, background_color=None):
+    """
+    Create a new image, drawing the masks of the sprites at the exact same
+    position that the sprites were in the original image.
+
+    The function draws each sprite mask with a random uniform color (one
+    color per sprite mask). The function also draws a rectangle (bounding
+    box) around each sprite mask, of the same color used for drawing the
+    sprite mask.
+
+
+    :param sprites: A collection of key-value pairs (a dictionary) where
+        each key-value pair maps the key (the label of a sprite) to its
+        associated value (a `Sprite` object).
+
+    :param label_matrix: A 2D array of integers of equal dimension (width
+        and height) as the original image where the sprites are packed in.
+        The `label_matrix` array maps each pixel of the image passed to
+        the function to the label of the sprite this pixel corresponds to,
+        or `0` if this pixel doesn't belong to a sprite (e.g., transparent
+        color).
+
+    :param background_color: Either a tuple `(R, G, B)` or a tuple
+        `(R, G, B, A)`) that identifies the color to use as the background
+        of the image to create. If this argument is not passed to the
+        function, the default value `(255, 255, 255)`.
+
+
+    :return: An `Image` object.
+
+
+    :raise ValueError: if the specified background color is not a tuple
+        `(R, G, B)`, neither a tuple `(R, G, B, A)`.
+    """
+    if background_color and (not isinstance(background_color, tuple) or not 3 <= len(background_color) <= 4):
+        raise ValueError('Invalid background color')
+
+    if background_color is None:
+        background_color = (255, 255, 255)
+
     # @todo: simplify with the list of Sprites object that MUST include the sprite label.
     sprite_labels = set([
         label
-        for row in image_mask
+        for row in label_matrix
         for label in row])
 
     # Randomly generate RGB colors for each sprite label using the specified
     # color (or White, if not defined) for the background.
-    sprite_label_colors = {
-        0: background_color or (255, 255, 255)
-    }
+    sprite_label_colors = {0: background_color}
 
     for label in list(sprite_labels)[1:]: # @todo: background color should not be in the sprite labels!
-        sprite_label_colors[label] = (random.randint(64, 200), random.randint(64, 200), random.randint(64, 200))
+        sprite_label_colors[label] = tuple([random.randint(64, 200) for c in range(len(background_color))])
 
     # Build the image with the sprite label's color.
     pixels = numpy.asarray([
         [sprite_label_colors[label] for label in row]
-        for row in image_mask],
+        for row in label_matrix],
         dtype=numpy.uint8)
 
-    image = Image.fromarray(pixels, 'RGB')
+    image = Image.fromarray(pixels, 'RGB' if len(background_color) == 3 else 'RGBA')
 
     # Draw the bounding boxes surrounding the sprites.
-    if display_bounding_boxes:
-        draw = ImageDraw.Draw(image)
+    draw = ImageDraw.Draw(image)
 
-        for label in sprites:
-            sprite = sprites[label]
-            color = sprite_label_colors[label]
-            color = (0,0,0)
-            draw.rectangle((sprite.top_left, sprite.bottom_right), outline=color, width=1)
+    for label in sprites:
+        sprite = sprites[label]
+        color = sprite_label_colors[label]
+        draw.rectangle((sprite.top_left, sprite.bottom_right), outline=color, width=1)
 
     return image
 
 
-image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/optimized_sprite_sheet.png')
-sprites, sprite_mask = find_sprites(image)
-len(sprites)
-for sprite_index, sprite in sprites.items():
-    print(f"Sprite ({sprite_index}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
 
-sprite_label_image = build_sprite_labels_image(
-    sprites,
-    sprite_mask,
-    display_bounding_boxes=True)
+image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/islands.png')
+sprites, labels = find_sprites(image)
+sprite_label_image = create_sprite_labels_image(sprites, labels)
+import pprint
+pprint.pprint(labels, width=120)
+sprite_label_image = create_sprite_labels_image(sprites, labels)
+sprite_label_image.save('/Users/dcaune/islands.png')
 
-sprite_label_image.save('/Users/dcaune/optimized_sprite_sheet_bounding_box.png')
+sprite_label_image = create_sprite_labels_image(sprites, labels, background_color=(0, 0, 0, 0))
+sprite_label_image.save('/Users/dcaune/optimized_sprite_sheet_bounding_box_transparent_background.png')
+
