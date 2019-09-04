@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#
 # Copyright (C) 2019 Intek Institute.  All rights reserved.
 #
 # This software is the confidential and proprietary information of
@@ -16,7 +18,8 @@
 
 import argparse
 import collections
-import datetime
+import os
+import pathlib
 import random
 import sys
 
@@ -25,6 +28,13 @@ from PIL import ImageDraw
 import numpy
 
 
+# Relative coordinates of the neighbor pixels.
+#
+# +----------+----------+----------+
+# | (-1, -1) | (0, -1)  | (1, -1)  |
+# +----------+----------+----------+
+# | (-1, 0)  |    X     |
+# +----------+----------+
 NEIGHBOR_PIXEL_RELATIVE_COORDINATES = ((-1, -1), (0, -1), (1, -1), (-1, 0))
 
 
@@ -104,80 +114,215 @@ class Sprite:
 
 
 class SpriteSheet:
-    # +---+---+---+
-    # | ? | ? | ? |
-    # +---+---+---+
-    # | ? | X |
-    # +---+---+
+    # Relative coordinates of the neighbor pixels.
+    #
+    # +----------+----------+----------+
+    # | (-1, -1) | (0, -1)  | (1, -1)  |
+    # +----------+----------+----------+
+    # | (-1, 0)  |    X     |
+    # +----------+----------+
     NEIGHBOR_PIXEL_RELATIVE_COORDINATES = ((-1, -1), (0, -1), (1, -1), (-1, 0))
 
-    def __init__(self, image, transparent_color=None):
-        self.__image = image
-        self.__transparent_color = transparent_color
-
-        self.__sprites = {}
-        # Dictionary of sprites connected to each other.
-        self.__sprites_links = {}
-
-    def __link_sprites(self, id1, id2):
+    def __init__(self, fd, background_color=None):
         """
-        Link the two sprites, and all the other sprites connected to them.
 
-        :param id1:
+        :param fd: An image file, either:
 
-        :param id2:
+            * the name and path (a string) that references an image file in the
+              local file system;
+
+            * a `pathlib.Path` object that references an image file in the local
+              file system ;
+
+            * a file object that MUST implement `read()`, `seek()`, and `tell()`
+              methods, and be opened in binary mode;
+
+            * a `PIL.Image` object.
+
+        :param background_color: The background color (i.e., transparent color)
+            of the image.  The type of `background_color` argument depends on
+            the images' mode:
+
+            * an integer if the mode is grayscale;
+
+            * a tuple `(red, green, blue)` of integers if the mode is `RGB`;
+
+            * a tuple `(red, green, blue, alpha)` of integers if the mode is
+             `RGBA`. The `alpha` element is optional. If not defined, while the
+             image mode is `RGBA`, the constructor considers the `alpha`
+             element to be `255`.
         """
-        sprite_indices = self.__sprites_links[id1] + self.__sprites_links[id2]
-        for sprite_index in sprite_indices:
-            self.__sprites_links[sprite_index] = sprite_indices
-
-    def detect_sprites(self, transparent_color=None):
-        # Determine the transparent color if not specified by the caller.
-        if transparent_color is None:
-            transparent_color = find_most_common_color(self.__image)
-
-        # Convert the image into an array for faster access.
-        image_pixels = numpy.asarray(self.__image)
-
-        # Build the mask of the image used to store the sprite label for each
-        # pixel of the given image.  The image mask is initially empty.
-        image_width, image_height = self.__image.size
-        image_mask = numpy.asarray([[0] * image_width] * image_height)
-
-        # Start sprite label with `1`; the value `0` for the sprite label of a
-        # pixel in the image mask means that this pixel doesn't belongs to any
-        # sprite (e.g., this is a transparent pixel).
-        sprite_index = 1
-
-        for y in range(image_height):
-            for x in range(image_width):
-                if tuple(image_pixels[y][x]) != transparent_color:  # @todo: convert `transparent_color` to a numpy.ndarray
-
-                    pixel_sprite_index = 0
-                    for dx, dy in SpriteSheet.NEIGHBOR_PIXEL_RELATIVE_COORDINATES:
-                        # Check whether a neighbor pixel belongs to a sprite.
-                        if 0 <= x + dx < image_width and y + dy >= 0 and image_mask[y + dy][x + dx] > 0:
-                            # If the current pixel has been already associated to a sprite, check
-                            # whether the neighbor pixel belongs to this same sprite, and if not,
-                            # merge those two sprites together.
-                            if pixel_sprite_index and pixel_sprite_index != image_mask[y + dy][x + dx] \
-                                    and image_mask[y + dy][x + dx] not in self.__sprites_links[pixel_sprite_index]:
-                                self.__link_sprites(pixel_sprite_index, image_mask[y + dy][x + dx])
-
-                            pixel_sprite_index = image_mask[y + dy][x + dx]
-
-                    image_mask[y][x] = pixel_sprite_index
-
-                    if pixel_sprite_index == 0:
-                        image_mask[y][x] = sprite_index
-                        self.__sprites_links[sprite_index] = [sprite_index]
-                        sprite_index += 1
-
-        return image_mask, self.__sprites_links
+        self.__image = Image.open(fd) if isinstance(fd, (str, pathlib.Path)) else fd
+        self.__background_color = background_color  # Lazy loading by the read-only property `background_color`.
 
 
+        # Table of label equivalence (a dictionary) to keep note of which labels
+        # refer to the same sprite when two parts of a sprite eventually connect.
+        # If a pixel has multiple neighbors with different labels, the algorithm
+        # assigns for that pixel the first label found and indicate that all
+        # the other ones are equivalent. The filled table contains every label
+        # (the key) in the image and the labels (the associated value) from
+        # their surrounding neighbors too.
+        self.__linked_labels = {}
 
-    def detect_most_common_color(self):
+        self.__sprites = None
+        self.__label_map = None
+
+    def __link_labels(self, label1, label2):
+        """
+        Link the two specified labels that identify connected parts of a same
+        sprite.
+
+
+        :param label1: A first label.
+
+        :param label2: An second label equivalent to the first label passed to
+            this function.
+        """
+        unified_labels = self.__linked_labels[label1] + self.__linked_labels[label2]
+        for label in unified_labels:
+            self.__linked_labels [label] = unified_labels
+
+    def __merge_linked_labels(self):
+        """
+        Merge the equivalence labels together and unify all the connected
+        fragments of a sprite to one sprite.
+
+
+        :return: A tuple `(sprites, labels)` where:
+
+            * `sprites`: A collection of key-value pairs (a dictionary) where each
+              key-value pair maps the key (the label of a sprite) to its associated
+              value (a `Sprite` object).  Each connected fragment of a sprite has
+              been unified to one sprite.
+
+            * `label_map`: A 2D array of integers of equal dimension (width and
+              height) as the original image where the sprites are packed in.  This
+              array maps each pixel of the original image to the label of the sprite
+              this pixel corresponds to, or `0` if this pixel doesn't belong to a
+              sprite (e.g., transparent color).
+        """
+        # Reduce each group of equivalence labels (each referencing connected
+        # parts of a sprite) to one label only, the first in the list.
+        primary_labels = {}
+        for label, equivalence_labels in self.__linked_labels.items():
+            primary_labels[label] = equivalence_labels[0]
+
+        # Create a new a 2D array of integers that maps each pixel of the to
+        # the unified label of the sprite this pixel corresponds to, or `0` if
+        # this pixel doesn't belong to a sprite (e.g., transparent color).
+        unified_label_map = [
+            [label and primary_labels[label] for label in row]
+            for row in self.__label_map]
+
+        # Determine the list of pixels mapped to each unique label.
+        label_pixels_coordinates = collections.defaultdict(list)
+        for y, row in enumerate(unified_label_map):
+            for x, label in enumerate(row):
+                if label:
+                    label_pixels_coordinates[label].append((x, y))
+
+        # Build the list of sprites (which connected parts have been reunified)
+        # and calculate their respective bounding box.
+        sprites = {}
+
+        for label in label_pixels_coordinates:
+            x1 = y1 = sys.maxsize
+            x2 = y2 = 0
+
+            for x, y in label_pixels_coordinates[label]:
+                if x < x1: x1 = x
+                if x > x2: x2 = x
+                if y < y1: y1 = y
+                if y > y2: y2 = y
+
+            sprites[label] = Sprite(label, x1, y1, x2, y2)
+
+        return sprites, unified_label_map
+
+    @property
+    def background_color(self):
+        """
+        Return the background color of the sprite sheet's image.
+
+
+        :return: The background color (i.e., transparent color)
+            of the image.  The type of `background_color` argument depends on
+            the images' mode:
+
+            * an integer if the mode is grayscale;
+
+            * a tuple `(red, green, blue)` of integers if the mode is `RGB`;
+
+            * a tuple `(red, green, blue, alpha)` of integers if the mode is
+             `RGBA`. The `alpha` element is optional. If not defined, while the
+             image mode is `RGBA`, the constructor considers the `alpha`
+             element to be `255`.
+        """
+        if not self.__background_color:
+            self.__background_color = self.find_most_common_color(self.__image)
+
+        return self.__background_color
+
+    def create_sprite_labels_image(self, background_color=None):
+        """
+        Create a new image, drawing the masks of the sprites at the exact same
+        position that the sprites were in the original image.
+
+        The function draws each sprite mask with a random uniform color (one
+        color per sprite mask). The function also draws a rectangle (bounding
+        box) around each sprite mask, of the same color used for drawing the
+        sprite mask.
+
+
+        :param background_color: Either a tuple `(R, G, B)` or a tuple
+            `(R, G, B, A)`) that identifies the color to use as the background
+            of the image to create. If this argument is not passed to the
+            function, the default value `(255, 255, 255)`.
+
+
+        :return: An `Image` object.
+
+
+        :raise ValueError: if the specified background color is not a tuple
+            `(R, G, B)`, neither a tuple `(R, G, B, A)`.
+        """
+        if self.__sprites is None:
+            self.find_sprites()
+
+        if background_color and (not isinstance(background_color, tuple) or not 3 <= len(background_color) <= 4):
+            raise ValueError('Invalid background color')
+
+        if background_color is None:
+            background_color = (255, 255, 255)
+
+        # Randomly generate RGB colors for each sprite label using the specified
+        # color (or White, if not defined) for the background.
+        sprite_label_colors = {0: background_color}
+
+        for label in list(self.__sprites.keys()):
+            sprite_label_colors[label] = tuple([random.randint(64, 200) for c in range(len(background_color))])
+
+        # Build the image with the sprite label's color.
+        pixels = numpy.asarray([
+            [sprite_label_colors[label] for label in row]
+            for row in self.__label_map],
+            dtype=numpy.uint8)
+
+        image = Image.fromarray(pixels, 'RGB' if len(background_color) == 3 else 'RGBA')
+
+        # Draw the bounding boxes surrounding the sprites.
+        draw = ImageDraw.Draw(image)
+
+        for label in self.__sprites:
+            sprite = self.__sprites[label]
+            color = sprite_label_colors[label]
+            draw.rectangle((sprite.top_left, sprite.bottom_right), outline=color, width=1)
+
+        return image
+
+    @staticmethod
+    def find_most_common_color(image):
         """
         Return the color that is the most common in the given image.
 
@@ -185,125 +330,183 @@ class SpriteSheet:
         :param image: A `PIL.Image` object.
 
 
-        :return: A tuple or an integer representing the color that is the most
+        :return: An integer or a tuple of integers (one for each band red, green,
+            blue, and possibly alpha) representing the color that is the most
             common in the given image.
         """
-        pixels = numpy.asarray(self.__image)
+        if image.mode not in ('L', 'RGB', 'RGBA'):
+            raise ValueError(f"'The image mode '{image.mode}' is not supported")
 
-        # Check whether the value of pixels is composed of multiple components
-        # (e.g., RGB, RGBA, CMYK, YCbCr, etc.)
-        is_multiple_components_color = len(pixels[0][0]) > 1
+        if image.mode == 'L':
+            # Retrieve the list of colors used in this image.
+            #
+            # @note: Because this method is limited to a maximum number of colors
+            #     (256), this method can only be used for non-RGB image (grayscale).
+            colors_count = image.getcolors()
 
-        # Count the number of times a pixel value is common in the given image.
-        colors_count = {}
-        for y in range(len(pixels)):
-            for x in range(len(pixels[y])):
-                # For image defined with multiple component color pixel, convert the
-                # numpy data type (not hashable) representing the pixel value to its
-                # tuple version (hashable).  This is a lot faster than converting the
-                # pixel value to an integer with:
-                #
-                #     sum([c << i for i, c in enumerate(pixels[y][x])])
-                color = tuple(pixels[y][x]) if is_multiple_components_color else pixels[y][x]
-                colors_count[color] = colors_count.get(color, 0) + 1
+            # Sort pixel value usages by decreasing order to retrieve the most common
+            # pixel value.
+            sorted_colors_count = sorted(colors_count, key=lambda color_count: color_count[0], reverse=True)
+            most_common_color_count, most_common_color = sorted_colors_count[0]
 
-        # Sort pixel value usages by decreasing order to retrieve the most common
-        # pixel value.
-        sorted_colors_count = sorted(colors_count.items(), key=lambda x: x[1], reverse=True)
-        most_common_color, most_common_color_count = sorted_colors_count[0]
+        else:
+            # Count the number of times each unique pixel value is used in the
+            # image.
+            #
+            # The numpy array of a PIL image, composed of multiple bands, is a 3D
+            # array: an array of rows of this image, a sub-array of columns for this
+            # row, and a sub-array of the band values of the pixel for this column
+            # and this row.
+            #
+            # We need to flatten this array to a 2D array: an array of band values
+            # of each pixel of this image.
+            #
+            # @note: We could have used the following similar code, but it's 30%
+            #    slower (more likely the time to reshape the initial array).
+            #
+            #    ```python
+            #    image_width, image_height = image.size
+            #    flatten_colors = numpy.asarray(image) \
+            #        .flatten() \
+            #        .reshape((image_width * image_height, len(image.getbands())))
+            #    pixel_counter = collections.Counter(zip(*flatten_colors))
+            #    ```
+
+            # Split this image into individual bands; for example, splitting an "RGB"
+            # image creates three new images each containing a copy of one of the
+            # original bands (red, green, blue). Then build a list of numpy arrays of
+            # these image bands with flatten values.
+            color_channels = [
+                numpy.asarray(image_band).flatten()
+                for image_band in image.split()]
+
+            # Recompose pixel colors with its respective components taken from each
+            # image band.
+            flatten_colors = zip(*color_channels)
+
+            # Count the number of times each unique color is used in the image and
+            # retrieve the most common color.
+            pixel_counter = collections.Counter(flatten_colors)
+
+            most_common_color_counts = pixel_counter.most_common(1)
+            most_common_color, most_common_color_count = most_common_color_counts[0]
 
         return most_common_color
 
+    def find_sprites(self):
+        """
+        Return a collection of sprites that are packed in the sprite sheet's
+        image, and an array that maps each pixel of the original image to the
+        label of the sprite this pixel corresponds to.
 
 
+        :return: A tuple `(sprites, label_map)` where:
+
+            * `sprites`: A collection of key-value pairs (a dictionary) where each
+              key-value pair maps the key (the label of a sprite) to its associated
+              value (a `Sprite` object).  Each connected fragment of a sprite has
+              been unified to one sprite.
+
+            * `label_map`: A 2D array of integers of equal dimension (width and
+              height) as the original image where the sprites are packed in.  This
+              array maps each pixel of the original image to the label of the sprite
+              this pixel corresponds to, or `0` if this pixel doesn't belong to a
+              sprite (e.g., transparent color).
+        """
+        if self.__sprites is None:
+            # Lazy load the background color if not already specified.
+            background_color = self.background_color
+
+            # Convert the image into an array for faster access.
+            pixels = numpy.asarray(self.__image)
+
+            # Create a 2D array of integers of equal dimension (width and height) as
+            # the image passed to the function. This array maps each pixel of the to
+            # the label of the sprite this pixel corresponds to, or `0` if this
+            # pixel doesn't belong to a sprite (e.g., transparent color).
+            image_width, image_height = self.__image.size
+            self.__label_map = numpy.asarray([[0] * image_width] * image_height)
+
+            # Generator of label identifiers to map with pixels that are part of a
+            # sprite (e.g., pixel that are not considered as transparent, that do
+            # not belong to the background color).
+            current_label = 0
+
+            for y in range(image_height):
+                for x in range(image_width):
+                    # Ignore transparent pixel (i.e., pixel which value corresponds to the
+                    # background color).
+                    #
+                    # @note: The code of this test is a lot faster than using the function
+                    #     `numpy.array_equal`:
+                    #
+                    #     ```python
+                    #     >>> timeit.timeit(stmt='tuple(pixels) == transparent_color', setup='import numpy; pixels = numpy.asarray([0, 0, 0]); transparent_color = (255,255,255)', number=1000000)
+                    #     1.4233526739990339
+                    #     >>> timeit.timeit(stmt='numpy.array_equal(pixels, transparent_color)', setup='import numpy; pixels = numpy.asarray([0, 0, 0]); transparent_color = [255,255,255]', number=1000000)
+                    #     7.9941349439977785
+                    if tuple(pixels[y][x]) != background_color:
+                        # Label associated to this pixel. Initially no label.
+                        pixel_label = 0
+
+                        for dx, dy in NEIGHBOR_PIXEL_RELATIVE_COORDINATES:
+                            # Check whether a neighbor pixel belongs to a sprite.
+                            if 0 <= x + dx < image_width and y + dy >= 0 and self.__label_map[y + dy][x + dx] > 0:
+                                # If the current pixel has been already associated to a label, check
+                                # whether the neighbor pixel has the same label, and if not, link these
+                                # labels and their equivalent labels all together.
+                                if pixel_label and pixel_label != self.__label_map[y + dy][x + dx] and \
+                                   self.__label_map[y + dy][x + dx] not in self.__linked_labels[pixel_label]:
+                                    self.__link_labels(pixel_label, self.__label_map[y + dy][x + dx])
+
+                                pixel_label = self.__label_map[y + dy][x + dx]
+
+                        # If the pixel is not connected to a neighbor pixel, generate a new
+                        # label. Map the pixel to the associated label.
+                        if pixel_label:
+                            self.__label_map[y][x] = pixel_label
+                        else:
+                            current_label += 1
+                            self.__linked_labels[current_label] = [current_label]
+                            self.__label_map[y][x] = current_label
+
+            self.__sprites, self.__label_map = self.__merge_linked_labels()
+
+        return self.__sprites, self.__label_map
 
 
-# def main():
-#     arguments = parse_arguments()
-#
-#     image = Image.open(arguments.file_path_name)
-#     detect_sprites(image)
-#
-#
-# def parse_arguments():
-#     """
-#     Convert argument strings to objects and assign them as attributes of
-#     the namespace.
-#
-#
-#     @return: an instance ``argparse.Namespace`` corresponding to the
-#         populated namespace.
-#     """
-#     parser = argparse.ArgumentParser(description='Sprite Detection')
-#     parser.add_argument(
-#         '-f', '--file',
-#         dest='file_path_name',
-#         metavar='FILE',
-#         required=True,
-#         help='specify the absolute name and path of the sprite sheet image file.')
-#
-#     return parser.parse_args()
-#
-#
-# # if __name__ == '__main__':
-# #     main()
-#
-#
-# def build_sprites_mask_image(file_path_name, image_mask, sprites_links, unified=False, background_color=None):
-#     if not background_color:
-#         background_color = (255, 255, 255)
-#
-#     sprites_color = dict()
-#
-#     if unified:
-#         for sprites_indices in sprites_links.values():
-#             primary_sprite_index = sprites_indices[0]
-#             if primary_sprite_index not in sprites_color:
-#                 sprites_color[primary_sprite_index] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-#
-#         pixels = numpy.asarray(
-#             [[sprites_color[sprites_links[c][0]] if c else (255, 255, 255) for c in row] for row in image_mask],
-#             dtype=numpy.uint8)
-#
-#     else:
-#         sprites_color[0] = (255, 255, 255)
-#
-#         for k in sprites_links.keys():
-#             sprites_color[k] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-#
-#         pixels = numpy.asarray(
-#             [[sprites_color[c] for c in row] for row in image_mask],
-#             dtype=numpy.uint8)
-#
-#     Image.fromarray(pixels, 'RGB').save(file_path_name)
-#
-#
-# #
-# #
-# # image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/metal_slug_sprite_sheet.png')
-# # image_mask, sprites_links = SpriteSheet.detect_sprites(image)
-# # build_sprites_mask_image('/Users/dcaune/Downloads/metal_slug_sprite_sheet_mask.png', image_mask, sprites_links)
-# #
-# #
-# # sprite_sheet = SpriteSheet(image)
-# # start_time = datetime.datetime.now()
-# # image_mask, sprites_links = sprite_sheet.detect_sprites()
-# # end_time = datetime.datetime.now()
-# # execution_time = end_time - start_time
-# #
-# # execution_time
-# # sprite_sheet.sprite_merging_time
-# # execution_time - sprite_sheet.sprite_merging_time
-# #
-# # build_sprites_mask_image('/Users/dcaune/Devel/intek-mission-sprite_detection/islands_split_sprites_mask_.png', image_mask, sprites_links)
-# # build_sprites_mask_image('/Users/dcaune/Devel/intek-mission-sprite_detection/islands_unified_sprites_mask_.png', image_mask, sprites_links, unified=True)
-# #
-# #
-# # image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/qr_code.png')
-# # image_mask, sprites_links = SpriteSheet.detect_sprites(image)
-# #
-# # build_sprites_mask_image('/Users/dcaune/Devel/intek-mission-sprite_detection/qr_code_decomposed_mask.png', image_mask, sprites_links)
-# # build_sprites_mask_image('/Users/dcaune/Devel/intek-mission-sprite_detection/qr_code_unified_mask.png', image_mask, sprites_links, unified=True)
+def main():
+    arguments = parse_arguments()
+
+    sprite_sheet = SpriteSheet(arguments.file_path_name)
+    image = sprite_sheet.create_sprite_labels_image()
+
+    path = os.path.dirname(arguments.file_path_name)
+    file_name = os.path.basename(arguments.file_path_name)
+    file_name_without_extension, file_extension = os.path.splitext(file_name)
+
+    image.save(os.path.join(path, f'{file_name_without_extension}_mask{file_extension}'))
+
+
+def parse_arguments():
+    """
+    Convert argument strings to objects and assign them as attributes of
+    the namespace.
+
+
+    @return: an instance ``argparse.Namespace`` corresponding to the
+        populated namespace.
+    """
+    parser = argparse.ArgumentParser(description='Sprite Detection')
+
+    parser.add_argument(
+        '-f', '--file',
+        dest='file_path_name',
+        metavar='FILE',
+        required=True,
+        help='specify the absolute name and path of the sprite sheet image file.')
+
+    return parser.parse_args()
 
 
 def find_most_common_color(image):
@@ -378,7 +581,41 @@ def find_most_common_color(image):
     return most_common_color
 
 
-def find_sprites(image, transparent_color=None):
+def find_sprites(image, background_color=None):
+    """
+    Return a collection of sprites that are packed in the sprite sheet's
+    image, and an array that maps each pixel of the original image to the
+    label of the sprite this pixel corresponds to.
+
+    :param image: an `PIL.Image` object.
+
+    :param background_color: The background color (i.e., transparent color)
+        of the image.  The type of `background_color` argument depends on
+        the images' mode:
+
+        * an integer if the mode is grayscale;
+
+        * a tuple `(red, green, blue)` of integers if the mode is `RGB`;
+
+        * a tuple `(red, green, blue, alpha)` of integers if the mode is
+         `RGBA`. The `alpha` element is optional. If not defined, while the
+         image mode is `RGBA`, the constructor considers the `alpha`
+         element to be `255`.
+
+
+    :return: A tuple `(sprites, label_map)` where:
+
+        * `sprites`: A collection of key-value pairs (a dictionary) where each
+          key-value pair maps the key (the label of a sprite) to its associated
+          value (a `Sprite` object).  Each connected fragment of a sprite has
+          been unified to one sprite.
+
+        * `label_map`: A 2D array of integers of equal dimension (width and
+          height) as the original image where the sprites are packed in.  This
+          array maps each pixel of the original image to the label of the sprite
+          this pixel corresponds to, or `0` if this pixel doesn't belong to a
+          sprite (e.g., transparent color).
+    """
     def __link_labels(label1, label2):
         """
         Link the two specified labels that identify connected parts of a same
@@ -400,7 +637,7 @@ def find_sprites(image, transparent_color=None):
         fragments of a sprite to one sprite.
 
 
-        :return: A tuple `(sprites, labels)` where:
+        :return: A tuple `(sprites, label_map)` where:
 
             * `sprites`: A collection of key-value pairs (a dictionary) where each
               key-value pair maps the key (the label of a sprite) to its associated
@@ -452,8 +689,8 @@ def find_sprites(image, transparent_color=None):
         return sprites, unified_label_map
 
     # Determine the transparent color if not specified by the caller.
-    if transparent_color is None:
-        transparent_color = find_most_common_color(image)
+    if background_color is None:
+        background_color = find_most_common_color(image)
 
     # Convert the image into an array for faster access.
     pixels = numpy.asarray(image)
@@ -492,7 +729,7 @@ def find_sprites(image, transparent_color=None):
             #     1.4233526739990339
             #     >>> timeit.timeit(stmt='numpy.array_equal(pixels, transparent_color)', setup='import numpy; pixels = numpy.asarray([0, 0, 0]); transparent_color = [255,255,255]', number=1000000)
             #     7.9941349439977785
-            if tuple(pixels[y][x]) != transparent_color:
+            if tuple(pixels[y][x]) != background_color:
                 # Label associated to this pixel. Initially no label.
                 pixel_label = 0
 
@@ -514,7 +751,6 @@ def find_sprites(image, transparent_color=None):
                     label_map[y][x] = pixel_label
                 else:
                     current_label += 1
-                    pixel_label = current_label
                     linked_labels[current_label] = [current_label]
                     label_map[y][x] = current_label
 
@@ -587,9 +823,5 @@ def create_sprite_labels_image(sprites, label_map, background_color=None):
     return image
 
 
-
-image = Image.open('/Users/dcaune/Devel/intek-mission-sprite_detection/metal_slug_sprite_standing_stance.png')
-sprites, label_map = find_sprites(image)
-sprite_label_image = create_sprite_labels_image(sprites, label_map)
-sprite_label_image.save('/Users/dcaune/foo.png')
-
+if __name__ == '__main__':
+    main()

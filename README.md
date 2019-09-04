@@ -108,7 +108,7 @@ _Note 2: You SHOULD [measure the execution time](https://docs.python.org/3.7/lib
 1.6871624910000023
 ```
 
-# Waypoint 2: Write a class `Sprite`
+# Waypoint 2: Write a Class `Sprite`
 
 Write a class `Sprite` which constructor takes 5 arguments `label`, `x1`, `y1`, `x2`, and `y2` (strictly positive integers). These arguments are used to initialize private attributes of the class `Sprite`.
 
@@ -182,19 +182,19 @@ Your image segmentation algorithm needs to isolate each sprite, producing boundi
 
 Write a function `find_sprites` that takes an argument `image` (an [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object).
 
-This function accepts an optional argument `transparent_color` (an integer if the image format is grayscale, or a tuple `(red, green, blue)` if the image format is `RGB`) that identifies the transparent color of the image. The function ignores any pixels of the image with this color.
+This function accepts an optional argument `background_color` (an integer if the image format is grayscale, or a tuple `(red, green, blue)` if the image format is `RGB`) that identifies the background color (i.e., transparent color) of the image. The function ignores any pixels of the image with this color.
 
-If this argument `transparent_color` is not passed, the function determines the transparent color of the image as follows:
+If this argument `background_color` is not passed, the function determines the background color of the image as follows:
 
 1. The image, such as a PNG file, has an [alpha channel](<https://en.wikipedia.org/wiki/Transparency_(graphic)>): the function ignores all the pixels of the image which alpha component is `255`;
 
-2. The image has no alpha channel: the function identifies the most common color of the image as the transparent color (cf. our function `find_most_common_color`).
+2. The image has no alpha channel: the function identifies the most common color of the image as the background color (cf. our function `find_most_common_color`).
 
 The function returns a tuple `(sprites, label_map)` where:
 
 - `sprites`: A collection of key-value pairs (a dictionary) where each key-value pair maps the key (the label of a sprite) to its associated value (a `Sprite` object);
 
-- `label_map`: A 2D array of integers of equal dimension (width and height) as the original image where the sprites are packed in. The `label_map` array maps each pixel of the image passed to the function to the label of the sprite this pixel corresponds to, or `0` if this pixel doesn't belong to a sprite (e.g., transparent color).
+- `label_map`: A 2D array of integers of equal dimension (width and height) as the original image where the sprites are packed in. The `label_map` array maps each pixel of the image passed to the function to the label of the sprite this pixel corresponds to, or `0` if this pixel doesn't belong to a sprite (e.g., background color).
 
 _Note: The sprite labels can be whatever unique strictly positive integers, with no particular order. The index of a sprite has no particular relationship with the position of the sprite in the image._
 
@@ -207,7 +207,7 @@ For example, let's consider the image file [sprite_example.png](metal_slug_singl
 ```python
 >>> from PIL import Image
 >>> image = Image.open('metal_slug_single_sprite.png')
->>> sprites, label_map = find_sprites(image, transparent_color=(255, 255, 255))
+>>> sprites, label_map = find_sprites(image, background_color=(255, 255, 255))
 >>> len(sprites)
 1
 >>> for label, sprite in sprites.items():
@@ -257,11 +257,11 @@ Sprite (1): [(0, 0), (29, 37)] 30x38
 
 Other example with the following image:
 
-![](optimized_sprite_sheet.png.png)
+![](optimized_sprite_sheet.png)
 
 ```python
 >>> from PIL import Image
->>> image = Image.open('optimized_sprite_sheet.png.png')
+>>> image = Image.open('optimized_sprite_sheet.png')
 >>> sprites, label_map = find_sprites(image)
 >>> len(sprites)
 22
@@ -319,18 +319,27 @@ For example:
 | ------------------------------------------------------------- | ------------------------------------------------------------------- |
 | ![](optimized_sprite_sheet_bounding_box_white_background.png) | ![](optimized_sprite_sheet_bounding_box_transparent_background.png) |
 
-# Waypoint: Write a class `SpriteSheet`
+# Waypoint: Write a Class `SpriteSheet`
 
-Write a class `SpriteSheet` which constructor accepts an argument `image` that corresponds to either:
+Write a class `SpriteSheet` which constructor accepts an argument `fd` that corresponds to either:
 
 - the name and path (a string) that references an image file in the local file system;
 - a [`pathlib.Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path) object that references an image file in the local file system ;
 - a [file object](https://docs.python.org/3/glossary.html#term-file-object) that MUST implement [`read()`](https://docs.python.org/3/library/io.html#io.IOBase.read), [`seek()`](https://docs.python.org/3/library/io.html#io.IOBase.seek), and [`tell()`](https://docs.python.org/3/library/io.html#io.IOBase.tell) methods, and be opened in binary mode;
 - a [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object.
 
-This constructor also accepts an optional argument `transparent_color` that identifies the transparent color of the image. The type of `transparent_color` argument depends on the images' mode:
+This constructor also accepts an optional argument `background_color` that identifies the background color (i.e., transparent color) of the image. The type of `background_color` argument depends on the images' mode:
 
 - an integer if the mode is grayscale;
 - a tuple `(red, green, blue)` of integers if the mode is `RGB`;
 - a tuple `(red, green, blue, alpha)` of integers if the mode is `RGBA`. The `alpha` element is optional. If not defined, while the image mode is `RGBA`, the constructor considers the `alpha` element to be `255`.
-  -->
+
+Integrate the function `find_most_common_color` as a static method of the class `SpriteSheet`.
+
+Add a read-only property `background_color` that returns the background color of the image that was passed to the constructor of the class `SpriteSheet`. If the argument `background_color` that was passed to the constructor of this class was `None`, the function of the read-only property `background_color` calls the static method `find_most_common_color` to determine the background color of the image, otherwise the function simply returns the value of the argument `background_color` that was passed.
+
+Integrate the function `find_sprites` as an instance method of the class `SpriteSheet`. You need to remove the optional argument `background_color` of this function; you need to use the private attribute of the class `SpriteSheet` that references the background color of the image of this sprite sheet.
+
+If your function `find_sprites` was using some other functions, these functions need to be integrated to the class `SpriteSheet` (more likely as private methods).
+
+Integrate the function `create_sprite_labels_image` as an instance method of the class `SpriteSheet`. You need to remove all the arguments `sprites` and `label_map`, and you need to use the respective instance private attributes of the class `SpriteSheet` instead.
