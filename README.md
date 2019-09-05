@@ -64,7 +64,7 @@ This space optimization is even more efficient when some big sprites have concav
 
 # Waypoint 1: Find the Most Common Color in an Image
 
-**YOU WILL CREATE A PYTHON FILE `sprite_sheet.py` WHERE YOU WILL EDIT YOUR CODE.**
+**YOU WILL CREATE A PYTHON FILE `spriteutil.py` WHERE YOU WILL EDIT YOUR CODE.**
 
 Write a function `find_most_common_color` that takes an argument `image` (a [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object) and that returns the pixel color that is the most used in this image.
 
@@ -346,7 +346,7 @@ If your function `find_sprites` was using some other functions, these functions 
 
 Integrate the function `create_sprite_labels_image` as an instance method of the class `SpriteSheet`. You need to remove all the arguments `sprites` and `label_map`, and you need to use the respective instance private attributes of the class `SpriteSheet` instead.
 
-# Waypoint 7: Package and Distribute the Python Library
+# Waypoint 6: Package and Distribute the Python Library
 
 We would like to [package our Python library](https://packaging.python.org/tutorials/packaging-projects/) and distribute it through the [Python Package Index](). That would allow other Python developer to reuse our Python library and to integrate it to their own project(s).
 
@@ -464,7 +464,41 @@ _Note: This code has a drawback. Importing `pipfile` means the user needs to act
 
 ## Package your Library
 
-https://packaging.python.org/tutorials/packaging-projects/
+You need to [package your library into a distribution archive](https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives) that we will later upload to the Python Package Index for other users to download and install using `pip`.
+
+Run the following command from the same directory where your `setup.py` file is located:
+
+```bash
+$ python setup.py sdist bdist_wheel
+```
+
+This command generate two files in the `dist` directory that are named with the arguments `name` and `version` you have passed to the `setuptools.setup` function.
+
+For example:
+
+```bash
+$ ls -1 dist
+spriteutil-1.0.0.tar.gz
+spriteutil-1.0.0-py3-none-any.whl
+```
+
+**YOU MUST NOT ADD TO YOUR GIT REPOSITORY ANY FILES AND DIRECTORIES THAT HAVE BEEN GENERATED!**
+
+_Note: When you fix issues in your code, or add new features, you increment accordingly the version of your library, and you rebuilt the distribution archive of your library. You will end-up with several distribution archives in your directory `dist`:_
+
+```bash
+$ ls -1 dist
+spriteutil-1.0.0.tar.gz
+spriteutil-1.0.1.tar.gz
+spriteutil-1.0.0-py3-none-any.whl
+spriteutil-1.0.1-py3-none-any.whl
+```
+
+_You might want to cleanse the directories `build` and `dist` before generating a new distribution archive:_
+
+```bash
+$ rm -Rfv build dist && python setup.py sdist bdist_wheel
+```
 
 ## Generate and Publish your Distribution Archive
 
@@ -472,10 +506,10 @@ To allow other users to search for your Python library, and to download and inst
 
 ![Python Package Index](pypi_home_page.jpg)
 
-Publishing your Python libary to the Python Package Index will allow other users to [install it using `pip`](https://packaging.python.org/tutorials/installing-packages/), such as for example:
+Publishing your Python libary to the Python Package Index will allow other users to [install it using `pip`](https://packaging.python.org/tutorials/installing-packages/), such as, for example:
 
 ```bash
-$ pip install sprite-sheet
+$ pip install spriteutil
 ```
 
 ### Publishing to The Test Python Package Index
@@ -484,8 +518,99 @@ The first thing you'll need to do is [register an account on Test PyPI](https://
 
 Once you have created an account on Test PyPI, you can publish your Python to Test PyPI by following the [official tutorial](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives).
 
+```bash
+$ python3 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+Enter your username: dcaune
+Enter your password:
+Uploading distributions to https://test.pypi.org/legacy/
+Uploading sprite_util-1.0.0-py3-none-any.whl
+100%|███████████████████████████████████████████████████████████| 20.1k/20.1k [00:04<00:00, 4.51kB/s]
+Uploading spriteutil-1.0.0.tar.gz
+100%|███████████████████████████████████████████████████████████| 18.6k/18.6k [00:02<00:00, 6.55kB/s]
+```
+
+Your project appears in the [list of your projects](https://test.pypi.org/manage/projects/):
+
+![Python Package Index Projects](pypi_projects_page.png)
+
 ### Publishing to The Production Python Package Index
 
-You will need first to [register an account](https://pypi.org/account/register/) on PyPI , if you haven't already one.
+You need first to [register an account](https://pypi.org/account/register/) on PyPI , if you haven't already one.
 
-You will need now [to upload your Python library to Python Package Index](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives).
+You repeat the same procedure than for publishing your distribution archive to Test PyPI, except that you will now publish to the real index:
+
+```bash
+$ python3 -m twine upload dist/*
+Enter your username: dcaune
+Enter your password:
+Uploading distributions to https://upload.pypi.org/legacy/
+Uploading sprite_util-1.0.0-py3-none-any.whl
+100%|███████████████████████████████████████████████████████████| 20.1k/20.1k [00:04<00:00, 4.74kB/s]
+Uploading spriteutil-1.0.0.tar.gz
+100%|███████████████████████████████████████████████████████████| 18.6k/18.6k [00:02<00:00, 8.11kB/s]
+```
+
+You can check if you can install your library
+
+```bash
+$ cd
+$ cd Devel
+$ mkdir test
+$ cd test
+$ pipenv shell --three
+Creating a virtualenv for this project...
+Pipfile: /Users/dcaune/Devel/test1/Pipfile
+Using /usr/local/bin/python3.7 (3.7.3) to create virtualenv...
+⠸ Creating virtual environment...
+(...)
+$ pipenv install spriteutil
+Installing spriteutil…
+Adding spriteutil to Pipfile's [packages]…
+✔ Installation Succeeded
+Pipfile.lock not found, creating…
+Locking [dev-packages] dependencies…
+Locking [packages] dependencies…
+✔ Success!
+Updated Pipfile.lock (2ef46f)!
+Installing dependencies from Pipfile.lock (2ef46f)…
+  🐍   ▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉ 21/21 — 00:00:09
+```
+
+Sounds good! Let's try to use our library:
+
+Let's download the [sprite sheet](https://www.brutaldeluxe.fr/products/crossdevtools/mrsprite/Barbarian.gif) of the [video game _Barbarian: The Ultimate Warrior_](https://en.wikipedia.org/wiki/Barbarian:_The_Ultimate_Warrior) first released for [Commodore 64](https://www.youtube.com/watch?v=PxfZ52Bf8h0) in 1987:
+
+```bash
+$ wget "https://www.brutaldeluxe.fr/products/crossdevtools/mrsprite/Barbarian.gif"
+```
+
+![](Barbarian.gif)
+
+We use our library to detect the sprites packed in this image:
+
+```python
+>>> from spriteutil.spritesheet import SpriteSheet
+>>> sprite_sheet = SpriteSheet('Barbarian.gif')
+>>> sprites, labels = sprite_sheet.find_sprites()
+Traceback (most recent call last):
+  File "<input>", line 1, in <module>
+  File "<input>", line 404, in find_sprites
+  File "<input>", line 249, in background_color
+  File "<input>", line 324, in find_most_common_color
+ValueError: 'The image mode 'P' is not supported
+>>> # GIF images are 8-bit pixels using a color palette. We need to
+>>> # convert our image to `RGB`.
+>>> from PIL import Image
+>>> image = Image.open('Barbarian.gif').convert('RGB')
+>>> sprite_sheet = SpriteSheet(image)
+>>> sprites, labels = sprite_sheet.find_sprites()
+>>> len(sprites)
+39
+>>> # Create the mask image with bounding boxes.
+>>> image = sprite_sheet.create_sprite_labels_image()
+>>> image.save('barbarian_bounding_boxes.png')
+```
+
+Et voilà!
+
+![](barbarian_boudinng_boxes.png)
