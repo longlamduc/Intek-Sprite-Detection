@@ -64,6 +64,8 @@ This space optimization is even more efficient when some big sprites have concav
 
 # Waypoint 1: Find the Most Common Color in an Image
 
+**YOU WILL CREATE A PYTHON FILE `sprite_sheet.py` WHERE YOU WILL EDIT YOUR CODE.**
+
 Write a function `find_most_common_color` that takes an argument `image` (a [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object) and that returns the pixel color that is the most used in this image.
 
 The data type of the value returned depends on the [image's mode](https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes):
@@ -319,7 +321,7 @@ For example:
 | ------------------------------------------------------------- | ------------------------------------------------------------------- |
 | ![](optimized_sprite_sheet_bounding_box_white_background.png) | ![](optimized_sprite_sheet_bounding_box_transparent_background.png) |
 
-# Waypoint: Write a Class `SpriteSheet`
+# Waypoint 5: Write a Class `SpriteSheet`
 
 Write a class `SpriteSheet` which constructor accepts an argument `fd` that corresponds to either:
 
@@ -343,3 +345,147 @@ Integrate the function `find_sprites` as an instance method of the class `Sprite
 If your function `find_sprites` was using some other functions, these functions need to be integrated to the class `SpriteSheet` (more likely as private methods).
 
 Integrate the function `create_sprite_labels_image` as an instance method of the class `SpriteSheet`. You need to remove all the arguments `sprites` and `label_map`, and you need to use the respective instance private attributes of the class `SpriteSheet` instead.
+
+# Waypoint 7: Package and Distribute the Python Library
+
+We would like to [package our Python library](https://packaging.python.org/tutorials/packaging-projects/) and distribute it through the [Python Package Index](). That would allow other Python developer to reuse our Python library and to integrate it to their own project(s).
+
+## Install Python Build and Distribution Tools
+
+To package and distribute a Python library, you need to install the following additional Python libraries:
+
+- [`setuptools`](https://github.com/pypa/setuptools): A collection of enhancements to the Python [distutils](https://docs.python.org/3/distutils/) that allow developers to more easily build and distribute Python distributions, especially ones that have dependencies on other packages
+- [`wheel`](https://pythonwheels.com/): A `setuptools` extension for creating _wheel_ distributions
+- [`twine`](https://github.com/pypa/twine): A utility for interacting with the Python Package Index, which we present later in this waypoint, when you will publish your Python library
+
+```bash
+$ pipenv install setuptools wheel twine
+```
+
+## Create the Package fFles
+
+You need to add 3 following files to your Python project:
+
+- `LICENSE`: An [open source license](https://choosealicense.com/) to make it easier for other people to contribute. We will choose the MIT license;
+- `README.md`: The documentation of our Python library, written using [Markdown markup](https://en.wikipedia.org/wiki/Markdown);
+- `setup.py`: a build script for [setuptools](https://packaging.python.org/key_projects/#setuptools). It tells `setuptools` about your package (such as the name and version) as well as which code files to include.
+
+### `LICENSE`
+
+We will release our Python library under the [MIT license](https://opensource.org/licenses/MIT).
+
+The [Massachusetts Institute of Technology (MIT)](https://en.wikipedia.org/wiki/Massachusetts_Institute_of_Technology) license is a permissive free software license that puts only very limited restriction on reuse. It permits reuse within proprietary software provided that all copies of the licensed software include a copy of the MIT License terms and the copyright notice.
+
+The MIT license is also compatible with the [GNU General Public License (GPL)](https://en.wikipedia.org/wiki/GNU_General_Public_License), but a lot less restrictive; MIT licensed software can be integrated into GPL software, but not the other way around.
+
+Create a `LICENSE` file at the root of your Python project and enter the following content:
+
+```text
+MIT License
+
+Copyright (C) 2019 Intek Institute.  All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+```
+
+### `README.md`
+
+You need to create a `README.md` file at the root of your Python project to tell other people why your project is useful, what they can do with your project, and how they can use it.
+
+A `README.md` file, along with a project license, helps you communicate expectations for and manage contributions to your project.
+
+A `README.md` file typically [includes information](https://github.com/18F/open-source-guide/blob/18f-pages/pages/making-readmes-readable.md) on:
+
+- What the project does
+- Why the project is useful
+- How users can get started with the project
+- Where users can get help with your project
+- Who maintains and contributes to the project
+
+You will use [Markdown markup](https://www.markdownguide.org/) to edit the content of your `README.md` file.
+
+### `setup.py`
+
+Create a `setup.py` file at the root of your project and edit its content according to the [Python Packaging Documentation](https://packaging.python.org/tutorials/packaging-projects/#creating-setup-py).
+
+Your `setup.py` file MUST reference the MIT license and it MUST include the content of your `README.md`.
+
+Your `setup.py` SHOULD include the following Python script headers (metadata variables, also known as [module level dunder names](https://www.python.org/dev/peps/pep-0008/#module-level-dunder-names)):
+
+- `__author__`
+- `__copyright__`: such as `Copyright (C) 2019, Intek Institute`
+- `__credits__`
+- `__email__`: your email address
+- `__license__`: `MIT`
+- `__maintainer__`: your name
+- `__version__`: a version respecting [PEP 396](https://www.python.org/dev/peps/pep-0396/), such as a [Semantic version](https://semver.org/)
+
+You SHOULD definitively reuse these metadata in the `setuptools.setup` section of your `setup.py` file. For exampple
+
+```python
+__author__ = 'Daniel CAUNE'
+__email__ = 'daniel.caune@gmail.com'
+__version = '1.0.0'
+
+setuptools.setup(
+    author=__author__,
+    author_email=__email__,
+    ...
+    version=__version__
+)
+```
+
+Most importantly, you MUST specify the optional argument [`install_requires`](https://packaging.python.org/guides/distributing-packages-using-setuptools/#install-requires) to indicate the list of third-party Python libraries your project requires (such as `Pillow` and probably `Numpy`). Indeed, you SHOULD NOT specify manually this list; you SHOULD generate this list. You can use something like:
+
+```python
+import pipfile
+pf = pipfile.load('LOCATION_OF_PIPFILE')
+print(pf.data['default'])
+```
+
+_Note: This code has a drawback. Importing `pipfile` means the user needs to actually install that before trying installing your package. The `setup.py` SHOULD only depend on `setuptools`. There are a few options, such as [`pipenv_setup`](https://github.com/Madoshakalaka/pipenv-setup)._
+
+## Package your Library
+
+https://packaging.python.org/tutorials/packaging-projects/
+
+## Generate and Publish your Distribution Archive
+
+To allow other users to search for your Python library, and to download and install it, you need to upload it to the [Python Package Index (PyPI)](https://pypi.org/), the official third-party software repository for Python:
+
+![Python Package Index](pypi_home_page.jpg)
+
+Publishing your Python libary to the Python Package Index will allow other users to [install it using `pip`](https://packaging.python.org/tutorials/installing-packages/), such as for example:
+
+```bash
+$ pip install sprite-sheet
+```
+
+### Publishing to The Test Python Package Index
+
+The first thing you'll need to do is [register an account on Test PyPI](https://test.pypi.org/account/register/). [Test PyPI](https://test.pypi.org/) is a separate instance of the package index intended for testing and experimentation. It's great for things where we don't necessarily want to upload to the real index.
+
+Once you have created an account on Test PyPI, you can publish your Python to Test PyPI by following the [official tutorial](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives).
+
+### Publishing to The Production Python Package Index
+
+You will need first to [register an account](https://pypi.org/account/register/) on PyPI , if you haven't already one.
+
+You will need now [to upload your Python library to Python Package Index](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives).
