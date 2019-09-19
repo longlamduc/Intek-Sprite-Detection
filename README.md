@@ -112,7 +112,7 @@ _Note 2: You SHOULD [measure the execution time](https://docs.python.org/3.7/lib
 
 # Waypoint 2: Write a Class `Sprite`
 
-Write a class `Sprite` which constructor takes 5 arguments `label`, `x1`, `y1`, `x2`, and `y2` (strictly positive integers). These arguments are used to initialize private attributes of the class `Sprite`.
+Write a class `Sprite` which constructor takes 5 arguments `label`, `x1`, `y1`, `x2`, and `y2` ([whole numbers](https://en.wikipedia.org/wiki/Integer)). These arguments are used to initialize private attributes of the class `Sprite`.
 
 Add the read-only property `label` to the class `Sprite` that returns the label of the sprite.
 
