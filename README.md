@@ -135,17 +135,17 @@ The constructor of the class `Sprite` raises an exception `ValueError` if one or
 For examples:
 
 ```python
->>> sprite = Sprite(-1, 0, 0, 0)
+>>> sprite = Sprite(1, -1, 0, 0, 0)
 Traceback (most recent call last):
   File "<input>", line 1, in <module>
   File "<input>", line 11, in __init__
 ValueError: Invalid coordinates
->>> sprite = Sprite("Hello", 0, 0, 0)
+>>> sprite = Sprite(1, "Hello", 0, 0, 0)
 Traceback (most recent call last):
   File "<input>", line 1, in <module>
   File "<input>", line 13, in __init__
 ValueError: Invalid coordinates
->>> sprite = Sprite(1, 0, 0, 0)
+>>> sprite = Sprite(1, 1, 0, 0, 0)
 Traceback (most recent call last):
   File "<input>", line 1, in <module>
   File "<input>", line 13, in __init__
