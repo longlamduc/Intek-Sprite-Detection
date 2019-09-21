@@ -170,11 +170,35 @@ For example:
 
 We would like to identify all the sprites packed in a single picture.
 
+# Background Color
+
 You need to implement an [image segmentation algorithm](./b5034b2ce2bdf21e09d3915207d7b824ceb4.pdf) that considers the color of each pixel of a specified picture to determine whether this pixel belongs to a sprite or not:
 
 - pixels which color **corresponds to the _background_ color** of the picture are considered as **transparent**, i.e., they don't belong to a sprite;
 
 - pixels which color is **different from the _background_ color** of the picture are considered as **solid**, i.e., they belong to a sprite.
+
+The background color of a sprite sheet generally corresponds to the most common color of the image.
+
+For examples:
+
+| Opaque Background Color (RGB model)                                                     | Transparent Background Color (RGBA model)                                                         |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| ![Ken Sprite Sheet with Opaque Background](ken_sprite_sheet_with_opaque_background.png) | ![Ken Sprite Sheet with Transparent Background](ken_sprite_sheet_with_transparent_background.png) |
+
+In the RGB model example, the sprites of [Ken](https://en.wikipedia.org/wiki/Ken_Masters) are drawn on an opaque background composed of pixels with the color [`RGB(128, 184, 168)`](https://www.colorhexa.com/80b8a8):
+
+![Ken Sprite Sheet with Opaque Background Pixels (Zoom-in)](ken_sprite_sheet_with_opaque_background_pixels_zoom.png)
+
+This slightly desaturated cyan (lime green) background color should be considered as as _transparent_ color. Our image segmentation algorithm MUST ignore pixels of this color; these pixels are considered as not part of any sprite.
+
+In the RGBA model example, the sprites of Ken are drawn on an transparent background composed of pixels with a color which `alpha` component is `0` (not opaque at all):
+
+![Ken Sprite Sheet with Transparent Background Pixels (Zoom-in)](ken_sprite_sheet_with_transparent_background_pixels_zoom.png)
+
+In that case, our image segmentation algorithm MUST ignore pixels with `alpha` component equal to `0`; these pixels are considered as not part of any sprite.
+
+## Pixel Connectivity
 
 Sprites correspond to smaller images composed of [connected pixels](https://en.wikipedia.org/wiki/Pixel_connectivity), meaning that each pixel of a sprite is adjacent to at least one of its direct neighbor pixels ([8-neighborhood connectivity method](4d991f5902c84c2181c6c573661abdc228b1.pdf)):
 
