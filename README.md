@@ -192,7 +192,7 @@ In the RGB model example, the sprites of [Ken](https://en.wikipedia.org/wiki/Ken
 
 This slightly desaturated cyan (lime green) background color should be considered as as _transparent_ color. Our image segmentation algorithm MUST ignore pixels of this color; these pixels are considered as not part of any sprites.
 
-In the RGBA model example, the sprites of Ken are drawn on an transparent background composed of pixels with a color which `alpha` component is `0` (not opaque at all):
+In the RGBA model example, the sprites of Ken are drawn on an transparent background composed of pixels with a color which `alpha` component is `0` (i.e., not opaque at all, totally transparent):
 
 ![Ken Sprite Sheet with Transparent Background Pixels (Zoom-in)](ken_sprite_sheet_with_transparent_background_pixels_zoom.png)
 
