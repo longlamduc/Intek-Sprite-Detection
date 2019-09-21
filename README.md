@@ -170,7 +170,7 @@ For example:
 
 We would like to identify all the sprites packed in a single picture.
 
-# Background Color
+## Background Color
 
 You need to implement an [image segmentation algorithm](./b5034b2ce2bdf21e09d3915207d7b824ceb4.pdf) that considers the color of each pixel of a specified picture to determine whether this pixel belongs to a sprite or not:
 
