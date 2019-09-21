@@ -190,13 +190,13 @@ In the RGB model example, the sprites of [Ken](https://en.wikipedia.org/wiki/Ken
 
 ![Ken Sprite Sheet with Opaque Background Pixels (Zoom-in)](ken_sprite_sheet_with_opaque_background_pixels_zoom.png)
 
-This slightly desaturated cyan (lime green) background color should be considered as as _transparent_ color. Our image segmentation algorithm MUST ignore pixels of this color; these pixels are considered as not part of any sprite.
+This slightly desaturated cyan (lime green) background color should be considered as as _transparent_ color. Our image segmentation algorithm MUST ignore pixels of this color; these pixels are considered as not part of any sprites.
 
 In the RGBA model example, the sprites of Ken are drawn on an transparent background composed of pixels with a color which `alpha` component is `0` (not opaque at all):
 
 ![Ken Sprite Sheet with Transparent Background Pixels (Zoom-in)](ken_sprite_sheet_with_transparent_background_pixels_zoom.png)
 
-In that case, our image segmentation algorithm MUST ignore pixels with `alpha` component equal to `0`; these pixels are considered as not part of any sprite.
+In that case, our image segmentation algorithm MUST ignore pixels with `alpha` component equal to `0`; these pixels are considered as not part of any sprites.
 
 ## Pixel Connectivity
 
