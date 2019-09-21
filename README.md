@@ -208,6 +208,8 @@ Sprites correspond to smaller images composed of [connected pixels](https://en.w
 
 Your image segmentation algorithm needs to isolate each sprite, producing bounding boxes with correct sizes and identifying isolated parts of a sprite as an included segment.
 
+## Requirements
+
 Write a function `find_sprites` that takes an argument `image` (an [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object).
 
 This function accepts an optional argument `background_color` (an integer if the image format is grayscale, or a tuple `(red, green, blue)` if the image format is `RGB`) that identifies the background color (i.e., transparent color) of the image. The function ignores any pixels of the image with this color.
