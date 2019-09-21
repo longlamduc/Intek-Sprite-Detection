@@ -66,13 +66,15 @@ This space optimization is even more efficient when some big sprites have concav
 
 **YOU WILL CREATE A PYTHON FILE `spriteutil.py` WHERE YOU WILL EDIT YOUR CODE.**
 
-Write a function `find_most_common_color` that takes an argument `image` (a [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object) and that returns the pixel color that is the most used in this image.
+Write a function `find_most_common_color` that takes an argument `image` (a [`Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html) object) and that returns the [pixel color](https://www.youtube.com/watch?v=15aqFQQVBWU) that is the most used in this image.
 
 The data type of the value returned depends on the [image's mode](https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes):
 
 - an integer if the mode is grayscale;
-- a tuple `(red, green, blue)` of integers if the mode is `RGB`;
-- a tuple `(red, green, blue, alpha)` of integers if the mode is `RGBA`.
+- a tuple `(red, green, blue)` of integers (0 to 255) if the mode is `RGB`;
+- a tuple `(red, green, blue, alpha)` of integers (0 to 255) if the mode is `RGBA`.
+
+_Note: the component `alpha` (`A`) corresponds to how much the pixel is **opaque** (i.e., how much the pixel is not **transparent**). `0` means the pixel is not opaque, the pixel is fully transparent, its color `RGB` is actually not displayed. `255` means the pixel is fully opaque, the pixel is not transparent at all, its color `RGB` is fully displayed._
 
 For example:
 
@@ -168,11 +170,11 @@ For example:
 
 We would like to identify all the sprites packed in a single picture.
 
-You need to implement an [image segmentation algorithm](./b5034b2ce2bdf21e09d3915207d7b824ceb4.pdf) that considers the color of each pixel of a specified picture to determine whether this sprite belongs to a sprite or not:
+You need to implement an [image segmentation algorithm](./b5034b2ce2bdf21e09d3915207d7b824ceb4.pdf) that considers the color of each pixel of a specified picture to determine whether this pixel belongs to a sprite or not:
 
-- pixels which color corresponds to the background color of the picture are considered as transparent, i.e., they don't belong to a sprite;
+- pixels which color **corresponds to the _background_ color** of the picture are considered as **transparent**, i.e., they don't belong to a sprite;
 
-- pixels which color is different from the background color of the picture are considered as solid, i.e., they belong to a sprite.
+- pixels which color is **different from the _background_ color** of the picture are considered as **solid**, i.e., they belong to a sprite.
 
 Sprites correspond to smaller images composed of [connected pixels](https://en.wikipedia.org/wiki/Pixel_connectivity), meaning that each pixel of a sprite is adjacent to at least one of its direct neighbor pixels ([8-neighborhood connectivity method](4d991f5902c84c2181c6c573661abdc228b1.pdf)):
 
