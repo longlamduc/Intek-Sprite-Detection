@@ -2,7 +2,7 @@
 
 ## Sprite
 
-A [**sprite**](<https://en.wikipedia.org/wiki/Sprite_(computer_graphics)>) is a small [**raster graphic**](https://en.wikipedia.org/wiki/Raster_graphics) (a **bitmap**) that represents an object such as a character, a vehicle, a projectile, etc.
+A [**sprite**](<https://en.wikipedia.org/wiki/Sprite_(computer_graphics)>) is a small [**raster graphic**](https://en.wikipedia.org/wiki/Raster_graphics) (a **bitmap**) that represents an object such as a [character, a vehicle, a projectile, etc.](https://www.youtube.com/watch?v=a1yBP5t-fSA)
 
 ![Metal Slug ](metal_slug_sprite_large.png)
 
@@ -24,7 +24,7 @@ For example, the animation of the hero Marco Rossi (Metal Slug), running with a 
 
 ## Sprite Sheet
 
-It is not uncommon for games to have tens to hundreds of sprites. Loading each of these as an individual image would consume a lot of memory and processing power. To help manage sprites and avoid using so many images, many games use **sprite sheets** (also known as **image sprites**).
+It is not uncommon for games to have tens to hundreds of sprites. Loading each of these as an individual image would consume a lot of memory and processing power. To help manage sprites and avoid using so many images, many games use [**sprite sheets**](https://www.youtube.com/watch?v=crrFUYabm6E) (also known as **image sprites**).
 
 A sprite sheet consists of multiple sprites in one image. In other words, sprite sheets pack multiple sprites into a single picture. Using sprite sheet, video game developers create sprite sheet animation representing one or several animation sequences while only loading a single file:
 
