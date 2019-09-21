@@ -97,7 +97,7 @@ For example:
 >>> image.mode
 'L'
 >>> find_most_common_color(image)
-152
+0
 ```
 
 <em>Note 1: Python is an interpreted, high-level, general-purpose programming language. Pure Python code is not great at processing large amount of data. However, Python comes with a large number of libraries written in [`C`](<https://en.wikipedia.org/wiki/C_(programming_language)>) that run very fast: [`Pillow`](https://en.wikipedia.org/wiki/Python_Imaging_Library) for image processing, [`NumPy`](https://en.wikipedia.org/wiki/NumPy) for large multi-dimensional arrays and matrices, etc. You SHOULD intensively use these libraries that extend Python and that allow your Python application to be fast.</em>
@@ -114,7 +114,7 @@ _Note 2: You SHOULD [measure the execution time](https://docs.python.org/3.7/lib
 
 # Waypoint 2: Write a Class `Sprite`
 
-Write a class `Sprite` which constructor takes 5 arguments `label`, `x1`, `y1`, `x2`, and `y2` (strictly positive integers). These arguments are used to initialize private attributes of the class `Sprite`.
+Write a class `Sprite` which constructor takes 5 arguments `label`, `x1`, `y1`, `x2`, and `y2` ([whole numbers](https://en.wikipedia.org/wiki/Integer)). These arguments are used to initialize private attributes of the class `Sprite`.
 
 Add the read-only property `label` to the class `Sprite` that returns the label of the sprite.
 
@@ -137,17 +137,17 @@ The constructor of the class `Sprite` raises an exception `ValueError` if one or
 For examples:
 
 ```python
->>> sprite = Sprite(-1, 0, 0, 0)
+>>> sprite = Sprite(1, -1, 0, 0, 0)
 Traceback (most recent call last):
   File "<input>", line 1, in <module>
   File "<input>", line 11, in __init__
 ValueError: Invalid coordinates
->>> sprite = Sprite("Hello", 0, 0, 0)
+>>> sprite = Sprite(1, "Hello", 0, 0, 0)
 Traceback (most recent call last):
   File "<input>", line 1, in <module>
   File "<input>", line 13, in __init__
 ValueError: Invalid coordinates
->>> sprite = Sprite(1, 0, 0, 0)
+>>> sprite = Sprite(1, 1, 0, 0, 0)
 Traceback (most recent call last):
   File "<input>", line 1, in <module>
   File "<input>", line 13, in __init__
