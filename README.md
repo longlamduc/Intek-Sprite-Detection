@@ -216,7 +216,7 @@ This function accepts an optional argument `background_color` (an integer if the
 
 If this argument `background_color` is not passed, the function determines the background color of the image as follows:
 
-1. The image, such as a PNG file, has an [alpha channel](<https://en.wikipedia.org/wiki/Transparency_(graphic)>): the function ignores all the pixels of the image which alpha component is `255`;
+1. The image, such as a PNG file, has an [alpha channel](<https://en.wikipedia.org/wiki/Transparency_(graphic)>): the function ignores all the pixels of the image which alpha component is `0`;
 
 2. The image has no alpha channel: the function identifies the most common color of the image as the background color (cf. our function `find_most_common_color`).
 
