@@ -376,7 +376,7 @@ Integrate the function `create_sprite_labels_image` as an instance method of the
 
 # Waypoint 6: Package and Distribute the Python Library
 
-We would like to [package our Python library](https://packaging.python.org/tutorials/packaging-projects/) and distribute it through the [Python Package Index](). That would allow other Python developer to reuse our Python library and to integrate it to their own project(s).
+We would like to [package our Python library](https://packaging.python.org/tutorials/packaging-projects/) and distribute it through the [Python Package Index](https://pypi.org/). That would allow other Python developer to reuse our Python library and to integrate it to their own project(s).
 
 ## Install Python Build and Distribution Tools
 
@@ -390,7 +390,7 @@ To package and distribute a Python library, you need to install the following ad
 $ pipenv install setuptools wheel twine
 ```
 
-## Create the Package fFles
+## Create the Package Files
 
 You need to add 3 following files to your Python project:
 
