@@ -8,3 +8,26 @@ def find_most_common_color(img):
     return max(colors, key=lambda item: item[0])[1]
 
 
+class Sprite():
+    def __init__(self, *args):
+        if any(x < 0 for x in args):
+            raise ValueError('Invalid coordinates')
+        if args[1] > args[3] or args[2] > args[4]:
+            raise ValueError('Invalid coordinates')
+        self.label = args[0]
+        self.x1 = args[1]
+        self.y1 = args[2]
+        self.x2 = args[3]
+        self.y2 = args[4]
+
+    @property
+    def label():
+        return self.label 
+
+    @property
+    def top_left():
+        return (self.x1, self.y1)
+
+    @property
+    def bottom_right():
+        return (self.x2, self.y2)
