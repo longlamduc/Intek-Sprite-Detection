@@ -21,13 +21,21 @@ class Sprite():
         self.y2 = args[4]
 
     @property
-    def label():
+    def label(self):
         return self.label 
 
     @property
-    def top_left():
+    def top_left(self):
         return (self.x1, self.y1)
 
     @property
-    def bottom_right():
+    def bottom_right(self):
         return (self.x2, self.y2)
+
+    @property
+    def width(self) :
+        return self.x2 - self.x1
+
+    @property
+    def height(self):
+        return self.y2 - self.y1
