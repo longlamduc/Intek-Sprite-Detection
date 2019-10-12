@@ -38,4 +38,4 @@ class Sprite():
 
     @property
     def height(self):
-        return self.y2 - self.y1 + 1
+        return self.y2 -  self.y1 + 1
