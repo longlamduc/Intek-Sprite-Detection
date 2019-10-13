@@ -91,12 +91,12 @@ def find_sprites(image, background_color=None):
                 sprites[label] = Sprite(sprite['label'], sprite['x1'], sprite['y1'], sprite['x2'], sprite['y2'])
     return (sprites, label_map)
 
-# image = Image.open('islands.png')
-# print(find_most_common_color(image))
-# sprites, label_map = find_sprites(image, background_color=(0, 221, 204, 255))
-# print(image.mode)
-# for label, sprite in sprites.items():
-#     print(f"Sprite ({label}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
+image = Image.open('islands.png')
+print(find_most_common_color(image))
+sprites, label_map = find_sprites(image, background_color=(0, 221, 204, 255))
+print(image.mode)
+for label, sprite in sprites.items():
+    print(f"Sprite ({label}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
 # import pprint
 # pprint.pprint(label_map, width=120)
 
