@@ -44,8 +44,10 @@ class Sprite:
 
 def is_background(point, background_color):
     if not background_color and point[3] == 0:
+        print(1)
         return True
-    else: 
+    elif not background_color: 
+        print(1)
         return False
     if list(point) == list(background_color):
         return True
@@ -96,10 +98,10 @@ def find_sprites(image, background_color=None):
                 sprites[label] = Sprite(sprite['label'], sprite['x1'], sprite['y1'], sprite['x2'], sprite['y2'])
     return (sprites, label_map)
 
-image = Image.open('optimized_sprite_sheet.png')
+image = Image.open('islands.png')
 print(find_most_common_color(image))
-# sprites, label_map = find_sprites(image, background_color=(0, 221, 204, 255))
-sprites, label_map = find_sprites(image)
+sprites, label_map = find_sprites(image, background_color=(0, 221, 204, 255))
+# sprites, label_map = find_sprites(image)
 print(image.mode)
 for label, sprite in sprites.items():
     print(f"Sprite ({label}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
