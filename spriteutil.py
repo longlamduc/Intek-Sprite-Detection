@@ -43,6 +43,10 @@ class Sprite:
 
 
 def is_background(point, background_color):
+    if not background_color and point[3] == 0:
+        return True
+    else: 
+        return False
     if list(point) == list(background_color):
         return True
     elif len(point) == 4 and point[3] == 0:
@@ -80,20 +84,22 @@ def find_sprites(image, background_color=None):
     label_map = [[0 for col in row] for row in lst_pixel]
     if not background_color and image.mode != 'RGBA':
         background_color = find_most_common_color(image)
+    print(background_color)
     for row_idx, row in enumerate(lst_pixel):
         for col_idx, point in enumerate(row):   
             if not is_background(point, background_color) and not checked[row_idx][col_idx]: 
-                # print(row_idx, col_idx)
+                print(row_idx, col_idx)
                 label += 1
                 checked[row_idx][col_idx] = True
                 sprite, label_map = find_whole_sprite(label_map, lst_pixel, checked, row_idx, col_idx, label, background_color)
-                # print(sprite)
+                print(sprite)
                 sprites[label] = Sprite(sprite['label'], sprite['x1'], sprite['y1'], sprite['x2'], sprite['y2'])
     return (sprites, label_map)
 
-image = Image.open('islands.png')
+image = Image.open('optimized_sprite_sheet.png')
 print(find_most_common_color(image))
-sprites, label_map = find_sprites(image, background_color=(0, 221, 204, 255))
+# sprites, label_map = find_sprites(image, background_color=(0, 221, 204, 255))
+sprites, label_map = find_sprites(image)
 print(image.mode)
 for label, sprite in sprites.items():
     print(f"Sprite ({label}): [{sprite.top_left}, {sprite.bottom_right}] {sprite.width}x{sprite.height}")
