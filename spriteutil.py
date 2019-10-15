@@ -9,16 +9,36 @@ def find_most_common_color(img):
 
 
 class Sprite():
-    def __init__(self, *args):
-        if any(x < 0 for x in args):
+    """
+        Create a sprite object wihth label and position
+    """
+    def __init__(self, label, x1, y1, x2, y2):
+        """
+        Arguments:
+            label {int} -- Sprite label
+            x1 {int} -- left position of sprite
+            y1 {int } -- top position of sprite
+            x2 {int} -- right position of sprite
+            y2 {int} -- bottom position of sprite
+        
+        Raises:
+            ValueError: Arguments is not type int
+            ValueError: Arguments contains negative number
+            ValueError: x1 < x2 or y1 < y2
+        """
+        if any(not isinstance(x, int) for x in [label, x1, y1, x2, y2]):
             raise ValueError('Invalid coordinates')
-        if args[1] > args[3] or args[2] > args[4]:
+        if any(x < 0 for x in [label, x1, y1, x2, y2]):
             raise ValueError('Invalid coordinates')
-        self.__label = args[0]
-        self.__x1 = args[1]
-        self.__y1 = args[2]
-        self.__x2 = args[3]
-        self.__y2 = args[4]
+        if x1 > x2 or y1 > y2:
+            raise ValueError('Invalid coordinates')
+        self.__label = label
+        self.__x1 = x1
+        self.__y1 = y1
+        self.__x2 = x2
+        self.__y2 = y2
+        self.__width = self.__x2 - self.__x1 + 1
+        self.__height = self.__y2 -  self.__y1 + 1
 
     @property
     def label(self):
@@ -34,8 +54,10 @@ class Sprite():
 
     @property
     def width(self) :
-        return self.__x2 - self.__x1 + 1
+        return self.__width
 
     @property
     def height(self):
-        return self.__y2 -  self.__y1 + 1
+        return self.__height
+
+
