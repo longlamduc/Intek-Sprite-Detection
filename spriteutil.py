@@ -2,6 +2,7 @@
 
 from PIL import Image
 import numpy as np
+import random
 
 
 def find_most_common_color(img):
@@ -172,3 +173,53 @@ def find_sprites(image, background_color=None):
                                     col_idx, label, background_color)
                 sprites[label] = create_sprite(label, label_map)
     return (sprites, label_map)
+
+
+def create_sprite_labels_image(sprites, label_map, background_color=None):
+    """Create an image containing mask for all sprite based on label_map
+    
+    Arguments:
+        sprites {dictionary} -- Container of all Sprite object
+        label_map {2d list} -- Label_map of image
+    
+    Keyword Arguments:
+        background_color {tuple} -- Background color of new image (default: {None}) 
+    
+    Returns:
+        Image -- Image of all sprite mask
+    """
+    if not background_color:
+        background_color = (255, 255, 255)
+    if len(background_color) == 3:
+        mode = 'RGB'
+    else: 
+        mode = 'RGBA'
+    image_size = (len(label_map[0]), len(label_map))
+    mask = Image.new(mode, image_size, background_color)
+    sprite_colors = {'0': background_color}
+    for label in sprites.keys():
+        while True:
+            red = random.randint(0, 255)
+            green = random.randint(0, 255)
+            blue = random.randint(0, 255)
+            if not (red, green, blue) in [sprite_colors[key] 
+                    for key in sprite_colors.keys()]:
+                if mode == 'RGBA':
+                    sprite_colors[label] = (red, green, blue, 255)
+                else:
+                    sprite_colors[label] =  (red, green, blue)
+                break 
+    width, height = mask.size
+    for x in range(width):
+        for y in range(height):
+            if label_map[y][x] != 0:
+                mask.putpixel((x, y), sprite_colors[label_map[y][x]])
+    for label in sprites.keys():
+        sprite = sprites[label]
+        for x in range(sprite.top_left[0], sprite.bottom_right[0] + 1):
+            mask.putpixel((sprite.bottom_right[1], x), sprite_colors[label])
+            mask.putpixel((sprite.top_left[1], x), sprite_colors[label])
+        for x in range(sprite.top_left[1], sprite.bottom_right[1] + 1):
+            mask.putpixel((x, sprite.top_left[0]), sprite_colors[label])
+            mask.putpixel((x, sprite.bottom_right[0]), sprite_colors[label])
+    return mask
