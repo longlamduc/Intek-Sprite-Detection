@@ -68,6 +68,8 @@ def find_whole_sprite(label_map, lst_pixel, checked, r_idx, c_idx, label, backgr
 
 
 def find_sprites(image, background_color=None):
+    if image.mode not in ['RGB', 'RGBA']:
+        image = image.convert('RGB')
     lst_pixel = np.asarray(image)
     checked = [[False for col in row] for row in lst_pixel]
     label = 0
@@ -98,7 +100,7 @@ def find_sprites(image, background_color=None):
     return (sprites, label_map)
 
 # test
-image = Image.open('optimized_sprite_sheet.png')
+image = Image.open('sprite_sheet_ken_02.png')
 # image = Image.open('islands.png')
 print(find_most_common_color(image))
 # sprites, label_map = find_sprites(image, background_color=(255, 255, 255))  # meta_slug
