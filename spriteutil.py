@@ -34,7 +34,7 @@ class Sprite():
             ValueError: Arguments contains negative number
             ValueError: x1 < x2 or y1 < y2
         """
-        if any(not isinstance(x, int) for x in [label, x1, y1, x2, y2]):
+        if not all(isinstance(x, int) for x in [label, x1, y1, x2, y2]):
             raise ValueError('Invalid coordinates')
         if any(x < 0 for x in [label, x1, y1, x2, y2]):
             raise ValueError('Invalid coordinates')
