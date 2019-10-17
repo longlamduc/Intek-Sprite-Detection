@@ -69,7 +69,7 @@ class SpriteSheet():
         try:
             self.image = Image.open(fd)
         except FileNotFoundError:
-            raise FileNotFoundError
+            raise FileNotFoundError("No such file or directory")
         except Exception as e:
             if "Image" in str(e):
                 self.image = fd
