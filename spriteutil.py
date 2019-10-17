@@ -66,25 +66,16 @@ class SpriteSheet():
         FileNotFoundError: When file path is not found
     """
     def __init__(self, fd, background_color=None):
-        self.image = None
-        while not self.image:
-            try:
-                self.image = Image.open(fd)
-            except UnicodeDecodeError:
-                fd = fd.name
-            except FileNotFoundError:
-                raise FileNotFoundError('No such file or directory')
-            except Exception as e:
-                if ('ImageFile') in str(e):
-                    self.image = fd
-                    break 
-                else: 
-                    print('Unexpected Error!')
-                    sys.exit()
-        if self.image.mode not in ['RGB', 'RGBA']:
-            self.image = self.image.convert('RGB')
-            self.__background_color = self.find_most_common_color(self.image)
-        if not background_color:
+        try:
+            self.image = Image.open(fd)
+        except FileNotFoundError:
+            raise FileNotFoundError
+        except Exception as e:
+            if "Image" in str(e):
+                self.image = fd
+            else:
+                raise Exception("This is not Image object or Image File Path")
+        if not background_color and self.image.mode != 'RGBA':
             background_color = self.find_most_common_color(self.image)
         self.__background_color = background_color
     
@@ -102,7 +93,7 @@ class SpriteSheet():
         Returns:
             tuple or int -- The most commly used color of image, tuple or int based on type
         """
-        colors = img.getcolors(maxcolors=1000000)
+        colors = img.getcolors(maxcolors=img.width*img.height)
         return max(colors, key=lambda item: item[0])[1]
 
     def __is_background(self, point):
@@ -115,16 +106,22 @@ class SpriteSheet():
         Returns:
             boolean -- Pixel is background or not
         """
-        background_color = self.background_color
-        if background_color is None:
+        background = self.background_color
+        mode = self.image.mode
+        if not background and mode == 'RGBA':
             if point[3] == 0:
                 return True
             else: 
                 return False
-        elif list(point) == list(background_color):
+        if mode not in ['RGB', 'RGBA'] and point == background:
+            return True
+        elif mode not in ['RGB', 'RGBA']: 
+            return False
+        if list(point) == list(background):
             return True
         else:
             return False
+        
 
 
     def __create_sprite(self, label, label_map):
@@ -189,7 +186,7 @@ class SpriteSheet():
         image = self.image
         lst_pixel = np.asarray(image)
         checked = [[False for col in row] for row in lst_pixel]
-        label = 0
+        label = 0 
         sprites = {}
         label_map = [[0 for col in row] for row in lst_pixel]
         background_color = self.__background_color
@@ -219,10 +216,13 @@ class SpriteSheet():
             Image -- Image of all sprite mask
         """
         background_color = self.background_color
-        if len(background_color) == 3:
-            mode = 'RGB'
-        else: 
+        if not background_color and not isinstance(background_color, int):
             mode = 'RGBA'
+        elif isinstance(background_color, tuple) and len(background_color) == 4:
+            mode = 'RGBA'
+        else: 
+            mode = 'RGB'
+        print(mode)
         sprites, label_map = self.find_sprites()
         image_size = (len(label_map[0]), len(label_map))
         mask = Image.new(mode, image_size, background_color)
@@ -254,8 +254,10 @@ class SpriteSheet():
                 mask.putpixel((x, sprite.bottom_right[0]), sprite_colors[label])
         return mask
 
-# a = SpriteSheet('sprite_sheet_ken_02.png')
+# img = Image.open('islands.png')
+# a = SpriteSheet(img, (0,221,204,255))
 # print(a.background_color)
 # b = a.create_sprite_labels_image()
-# b.save('c.png')
+# b.save('d.png')
+# print(b.mode)
 
