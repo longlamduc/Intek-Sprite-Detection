@@ -43,7 +43,7 @@ This is a Python module used for detection sprites from an image
 	arg: image: MUST be an Image object
 
 ## Installation:
-The project require Python 3.7+ to run
+The project require Python 3.6+ to run
 
 #### &ensp; FOR USER:
 ##### &emsp; In Terminal, use command:
