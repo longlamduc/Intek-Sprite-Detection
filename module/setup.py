@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="spriteutil-longlamduc",
-    version="1.0.1",
+    name="spriteutil_final",
+    version="1.0.2",
     author="Long Lam Duc",
     author_email="long.lam@f4.intek.edu.vn",
     description="A sprite detection package",
