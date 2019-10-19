@@ -161,9 +161,8 @@ class SpriteSheet():
         while len(way) > 0:
             row, col = way.pop(0)
             label_map[row][col] = label 
-            for x, y in [(row - 1, col - 1), (row - 1, col), (row - 1, col + 1), 
-                        (row, col - 1), (row, col + 1), (row + 1, col-1), 
-                        (row + 1, col), (row + 1, col + 1)]:
+            for x, y in [(row - 1, col), (row + 1, col),
+                        (row, col - 1), (row, col + 1)]:
                 if 0 <= x <= len(lst_pixel) - 1 and \
                     0 <= y <= len(lst_pixel[0]) - 1 and \
                     not checked[x][y] and \
@@ -253,11 +252,3 @@ class SpriteSheet():
                 mask.putpixel((x, sprite.top_left[0]), sprite_colors[label])
                 mask.putpixel((x, sprite.bottom_right[0]), sprite_colors[label])
         return mask
-
-# img = Image.open('islands.png')
-# a = SpriteSheet(img, (0,221,204,255))
-# print(a.background_color)
-# b = a.create_sprite_labels_image()
-# b.save('d.png')
-# print(b.mode)
-
