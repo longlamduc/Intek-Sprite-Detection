@@ -66,6 +66,7 @@ class SpriteSheet():
         FileNotFoundError: When file path is not found
     """
     def __init__(self, fd, background_color=None):
+        print('Saving image...')
         try:
             self.image = Image.open(fd)
         except FileNotFoundError:
@@ -75,6 +76,7 @@ class SpriteSheet():
                 self.image = fd
             else:
                 raise Exception("This is not Image object or Image File Path")
+        print('Image mode: ', self.image.mode)
         if not background_color and self.image.mode != 'RGBA':
             background_color = self.find_most_common_color(self.image)
         self.__background_color = background_color
@@ -121,6 +123,8 @@ class SpriteSheet():
             return True
         else:
             return False
+        
+
 
     def __create_sprite(self, label, label_map):
         """Create a Sprite object with specified label and label_map
@@ -180,6 +184,7 @@ class SpriteSheet():
             tuple -- Dictionary of sprite information and label_map of 
                 corresponding sprites found
         """
+        print('Finding sprites in this image...')
         image = self.image
         lst_pixel = np.asarray(image)
         checked = [[False for col in row] for row in lst_pixel]
@@ -219,8 +224,8 @@ class SpriteSheet():
             mode = 'RGBA'
         else: 
             mode = 'RGB'
-        print(mode)
         sprites, label_map = self.find_sprites()
+        print('Creating label mask for all image sprites...')
         image_size = (len(label_map[0]), len(label_map))
         mask = Image.new(mode, image_size, background_color)
         sprite_colors = {'0': background_color}
@@ -249,4 +254,7 @@ class SpriteSheet():
             for x in range(sprite.top_left[1], sprite.bottom_right[1] + 1):
                 mask.putpixel((x, sprite.top_left[0]), sprite_colors[label])
                 mask.putpixel((x, sprite.bottom_right[0]), sprite_colors[label])
+        print('Successfully created sprites label mask!')
         return mask
+
+
