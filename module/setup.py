@@ -5,13 +5,13 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="spriteutil_final",
-    version="1.0.2",
+    version="1.0.4",
     author="Long Lam Duc",
     author_email="long.lam@f4.intek.edu.vn",
     description="A sprite detection package",
-    long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/intek-training-jsc/sprite-detection-longlamduc`",
+    long_description=long_description,
+    url="https://github.com/intek-training-jsc/sprite-detection-longlamduc.git",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

@@ -3,7 +3,6 @@
 This is a Python module used for detection sprites from an image
 
 ## Why use this module?
-* **Fast:** It can detect all sprites in the image for short time
 * **Easy to use:** You just need to pass an image an get the result
 * **Time saving:** This module is already built so you don't need to spend time for it anymore!
 
@@ -28,13 +27,13 @@ This is a Python module used for detection sprites from an image
 	arg: image: MUST be an Image object
 	Return most used color in the image with the same format image's mode
 
-##### &ensp;&nbsp; SpriteSheet_object.create_sprite_labels_image():
+##### &ensp;&nbsp; SpriteSheet.object.create_sprite_labels_image():
 
 	Create a mask image of initial image, and add a bounding box around each sprite,
 	each sprite also have an unique random uniform color.
 	Return an Image object.
 
-##### &ensp;&nbsp; SpriteSheet_object.find_sprites():
+##### &ensp;&nbsp; SpriteSheet.object.find_sprites():
 
 	Detect sprites inside the image
 	Return a 2D label map and a dict that stores:
@@ -48,12 +47,20 @@ The project require Python 3.7+ to run
 #### &ensp; FOR USER:
 ##### &emsp; In Terminal, use command:
 
-		 pip3 install spriteutil
+		 pip3 install spriteutil_final
 
 #### &ensp; FOR DEVELOPMENT:
 ##### &emsp; Clone or Downloads the project, using this command and then edit anything you want:
 
          git clone https://github.com/intek-training-jsc/sprite-detection-longlamduc.git
+
+## A Simple Example
+
+		from spriteutil_final.spriteutil import SpriteSheet
+		spritesheet = SpriteSheet('islands.png')
+		sprites, label_map = spritesheet.find_sprites()
+		img_mask = spritesheet.create_sprite_labels_image()
+		img_mask.save('islands_label_mask.png')
 
 ## Contact:
 &emsp;&emsp;&emsp; During the usage of the project, if you have any question, please contact me personally at INTEK HCM City or via my email: long.lam@f4.intek.edu.vn

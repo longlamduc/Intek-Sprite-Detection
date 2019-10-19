@@ -66,6 +66,7 @@ class SpriteSheet():
         FileNotFoundError: When file path is not found
     """
     def __init__(self, fd, background_color=None):
+        print('Saving image...')
         try:
             self.image = Image.open(fd)
         except FileNotFoundError:
@@ -75,6 +76,7 @@ class SpriteSheet():
                 self.image = fd
             else:
                 raise Exception("This is not Image object or Image File Path")
+        print('Image mode: ', self.image.mode)
         if not background_color and self.image.mode != 'RGBA':
             background_color = self.find_most_common_color(self.image)
         self.__background_color = background_color
@@ -161,9 +163,8 @@ class SpriteSheet():
         while len(way) > 0:
             row, col = way.pop(0)
             label_map[row][col] = label 
-            for x, y in [(row - 1, col - 1), (row - 1, col), (row - 1, col + 1), 
-                        (row, col - 1), (row, col + 1), (row + 1, col-1), 
-                        (row + 1, col), (row + 1, col + 1)]:
+            for x, y in [(row - 1, col), (row + 1, col),
+                        (row, col - 1), (row, col + 1)]:
                 if 0 <= x <= len(lst_pixel) - 1 and \
                     0 <= y <= len(lst_pixel[0]) - 1 and \
                     not checked[x][y] and \
@@ -183,6 +184,7 @@ class SpriteSheet():
             tuple -- Dictionary of sprite information and label_map of 
                 corresponding sprites found
         """
+        print('Finding sprites in this image...')
         image = self.image
         lst_pixel = np.asarray(image)
         checked = [[False for col in row] for row in lst_pixel]
@@ -222,8 +224,8 @@ class SpriteSheet():
             mode = 'RGBA'
         else: 
             mode = 'RGB'
-        print(mode)
         sprites, label_map = self.find_sprites()
+        print('Creating label mask for all image sprites...')
         image_size = (len(label_map[0]), len(label_map))
         mask = Image.new(mode, image_size, background_color)
         sprite_colors = {'0': background_color}
@@ -252,12 +254,7 @@ class SpriteSheet():
             for x in range(sprite.top_left[1], sprite.bottom_right[1] + 1):
                 mask.putpixel((x, sprite.top_left[0]), sprite_colors[label])
                 mask.putpixel((x, sprite.bottom_right[0]), sprite_colors[label])
+        print('Successfully created sprites label mask!')
         return mask
 
-# img = Image.open('islands.png')
-# a = SpriteSheet(img, (0,221,204,255))
-# print(a.background_color)
-# b = a.create_sprite_labels_image()
-# b.save('d.png')
-# print(b.mode)
 
