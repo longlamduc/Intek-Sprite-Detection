@@ -128,9 +128,8 @@ def find_whole_sprite(label_map, lst_pixel, checked, r_idx, c_idx, label, backgr
     while len(way) > 0:
         row, col = way.pop(0)
         label_map[row][col] = label 
-        for x, y in [(row - 1, col - 1), (row - 1, col), (row - 1, col + 1), 
-                     (row, col - 1), (row, col + 1), (row + 1, col-1), 
-                     (row + 1, col), (row + 1, col + 1)]:
+        for x, y in [(row - 1, col), (row + 1, col),
+                        (row, col - 1), (row, col + 1)]:
             if 0 <= x <= len(lst_pixel) - 1 and \
                 0 <= y <= len(lst_pixel[0]) - 1 and \
                 not checked[x][y] and \
