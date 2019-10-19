@@ -3,19 +3,7 @@
 from PIL import Image
 import numpy as np
 import random
-
-
-def find_most_common_color(img):
-    """Find the most commonly used color in the image
-    
-    Arguments:
-        img {Image} -- PIL Image object
-    
-    Returns:
-        tuple or int -- The most commly used color of image, tuple or int based on type
-    """
-    colors = img.getcolors(maxcolors=1000000)
-    return max(colors, key=lambda item: item[0])[1]
+import sys
 
 
 class Sprite():
@@ -71,155 +59,194 @@ class Sprite():
         return self.__height
 
 
-def is_background(point, background_color):
-    """Check if an image pixel is background or not
+class SpriteSheet():
+    """Container of all Image Sprite Detection Method
     
-    Arguments:
-        point {tuple} -- Color of the pixel
-        background_color {tuple} -- Color of the image backgrounf
-    
-    Returns:
-        boolean -- Pixel is background or not
+    Raises:
+        FileNotFoundError: When file path is not found
     """
-    if background_color is None:
-        if point[3] == 0:
+    def __init__(self, fd, background_color=None):
+        try:
+            self.image = Image.open(fd)
+        except FileNotFoundError:
+            raise FileNotFoundError("No such file or directory")
+        except Exception as e:
+            if "Image" in str(e):
+                self.image = fd
+            else:
+                raise Exception("This is not Image object or Image File Path")
+        if not background_color and self.image.mode != 'RGBA':
+            background_color = self.find_most_common_color(self.image)
+        self.__background_color = background_color
+    
+    @property
+    def background_color(self):
+        return self.__background_color
+
+    @staticmethod
+    def find_most_common_color(img):
+        """Find the most commonly used color in the image
+        
+        Arguments:
+            img {Image} -- PIL Image object
+        
+        Returns:
+            tuple or int -- The most commly used color of image, tuple or int based on type
+        """
+        colors = img.getcolors(maxcolors=img.width*img.height)
+        return max(colors, key=lambda item: item[0])[1]
+
+    def __is_background(self, point):
+        """Check if an image pixel is background or not
+        
+        Arguments:
+            point {tuple} -- Color of the pixel
+            background_color {tuple} -- Color of the image backgrounf
+        
+        Returns:
+            boolean -- Pixel is background or not
+        """
+        background = self.background_color
+        mode = self.image.mode
+        if not background and mode == 'RGBA':
+            if point[3] == 0:
+                return True
+            else: 
+                return False
+        if mode not in ['RGB', 'RGBA'] and point == background:
             return True
-        else: 
+        elif mode not in ['RGB', 'RGBA']: 
             return False
-    elif list(point) == list(background_color):
-        return True
-    else:
-        return False
+        if list(point) == list(background):
+            return True
+        else:
+            return False
+
+    def __create_sprite(self, label, label_map):
+        """Create a Sprite object with specified label and label_map
+        
+        Arguments:
+            label {int} -- Sprite label
+            label_map {2d list} -- Label map contains sprite label
+        
+        Returns:
+            Sprite -- Sprite object with label argument
+        """
+        sprite = {'label': label}
+        pos = np.array(label_map, dtype=np.int64)
+        pos = np.argwhere(pos==label)
+        sprite['x1'] = int(min([x[0] for x in pos]))
+        sprite['x2'] = int(max([x[0] for x in pos]))
+        sprite['y1'] = int(min([x[1] for x in pos]))
+        sprite['y2'] = int(max([x[1] for x in pos]))
+        return Sprite(sprite['label'], sprite['x1'], sprite['y1'], 
+                        sprite['x2'], sprite['y2'])
 
 
-def create_sprite(label, label_map):
-    """Create a Sprite object with specified label and label_map
-    
-    Arguments:
-        label {int} -- Sprite label
-        label_map {2d list} -- Label map contains sprite label
-    
-    Returns:
-        Sprite -- Sprite object with label argument
-    """
-    sprite = {'label': label}
-    pos = np.array(label_map, dtype=np.int64)
-    pos = np.argwhere(pos==label)
-    sprite['x1'] = int(min([x[0] for x in pos]))
-    sprite['x2'] = int(max([x[0] for x in pos]))
-    sprite['y1'] = int(min([x[1] for x in pos]))
-    sprite['y2'] = int(max([x[1] for x in pos]))
-    return Sprite(sprite['label'], sprite['x1'], sprite['y1'], 
-                    sprite['x2'], sprite['y2'])
+    def __find_whole_sprite(self, label_map, lst_pixel, checked, r_idx, c_idx, label):
+        """Check out whole sprite from specified spite pixel
+        
+        Arguments:
+            label_map {2d list} -- List corresponding to sprite label in image
+            lst_pixel {2d list} -- List of all pixel in the image
+            checked {2d list} -- List of checked on in the label_map
+            r_idx {int} -- Row index of found pixel
+            c_idx {int} -- Col index of found pixel
+            label {int} -- Label of the new sprite
+        """
+        background_color = self.background_color
+        way = [(r_idx, c_idx)]
+        while len(way) > 0:
+            row, col = way.pop(0)
+            label_map[row][col] = label 
+            for x, y in [(row - 1, col), (row + 1, col),
+                        (row, col - 1), (row, col + 1)]:
+                if 0 <= x <= len(lst_pixel) - 1 and \
+                    0 <= y <= len(lst_pixel[0]) - 1 and \
+                    not checked[x][y] and \
+                    not self.__is_background(lst_pixel[row][col]):
+                    checked[x][y] = True
+                    way.append((x, y))
 
 
-def find_whole_sprite(label_map, lst_pixel, checked, r_idx, c_idx, label, background_color):
-    """Check out whole sprite from specified spite pixel
-    
-    Arguments:
-        label_map {2d list} -- List corresponding to sprite label in image
-        lst_pixel {2d list} -- List of all pixel in the image
-        checked {2d list} -- List of checked on in the label_map
-        r_idx {int} -- Row index of found pixel
-        c_idx {int} -- Col index of found pixel
-        label {int} -- Label of the new sprite
-        background_color {tuple} -- Background color of image
-    """
-    way = [(r_idx, c_idx)]
-    while len(way) > 0:
-        row, col = way.pop(0)
-        label_map[row][col] = label 
-        for x, y in [(row - 1, col - 1), (row - 1, col), (row - 1, col + 1), 
-                     (row, col - 1), (row, col + 1), (row + 1, col-1), 
-                     (row + 1, col), (row + 1, col + 1)]:
-            if 0 <= x <= len(lst_pixel) - 1 and \
-                0 <= y <= len(lst_pixel[0]) - 1 and \
-                not checked[x][y] and \
-                not is_background(lst_pixel[row][col], background_color):
-                checked[x][y] = True
-                way.append((x, y))
+    def find_sprites(self):
+        """Get an image as argument and then find all sprites in that image 
+        by checking each pixel's color
+        
+        Arguments:
+            image {Image} -- Image to find sprites
+        
+        Returns:
+            tuple -- Dictionary of sprite information and label_map of 
+                corresponding sprites found
+        """
+        image = self.image
+        lst_pixel = np.asarray(image)
+        checked = [[False for col in row] for row in lst_pixel]
+        label = 0 
+        sprites = {}
+        label_map = [[0 for col in row] for row in lst_pixel]
+        background_color = self.__background_color
+        for row_idx, row in enumerate(lst_pixel):
+            for col_idx, point in enumerate(row):   
+                if not self.__is_background(point) and \
+                    not checked[row_idx][col_idx]: 
+                    label += 1
+                    checked[row_idx][col_idx] = True
+                    self.__find_whole_sprite(label_map, lst_pixel, checked, 
+                                                row_idx, col_idx, label)
+                    sprites[label] = self.__create_sprite(label, label_map)
+        return (sprites, label_map)
 
 
-def find_sprites(image, background_color=None):
-    """Get an image as argument and then find all sprites in that image 
-    by checking each pixel's color
-    
-    Arguments:
-        image {Image} -- Image to find sprites
-    
-    Keyword Arguments:
-        background_color {tuple} -- background color of image (default: {None})
-    
-    Returns:
-        tuple -- Dictionary of sprite information and label_map of 
-            corresponding sprites found
-    """
-    if image.mode not in ['RGB', 'RGBA']:
-        image = image.convert('RGB')
-    lst_pixel = np.asarray(image)
-    checked = [[False for col in row] for row in lst_pixel]
-    label = 0
-    sprites = {}
-    label_map = [[0 for col in row] for row in lst_pixel]
-    if not background_color and image.mode != 'RGBA':
-        background_color = find_most_common_color(image)
-    for row_idx, row in enumerate(lst_pixel):
-        for col_idx, point in enumerate(row):   
-            if not is_background(point, background_color) and \
-                not checked[row_idx][col_idx]: 
-                label += 1
-                checked[row_idx][col_idx] = True
-                find_whole_sprite(label_map, lst_pixel, checked, row_idx, 
-                                    col_idx, label, background_color)
-                sprites[label] = create_sprite(label, label_map)
-    return (sprites, label_map)
-
-
-def create_sprite_labels_image(sprites, label_map, background_color=None):
-    """Create an image containing mask for all sprite based on label_map
-    
-    Arguments:
-        sprites {dictionary} -- Container of all Sprite object
-        label_map {2d list} -- Label_map of image
-    
-    Keyword Arguments:
-        background_color {tuple} -- Background color of new image (default: {None}) 
-    
-    Returns:
-        Image -- Image of all sprite mask
-    """
-    if not background_color:
-        background_color = (255, 255, 255)
-    if len(background_color) == 3:
-        mode = 'RGB'
-    else: 
-        mode = 'RGBA'
-    image_size = (len(label_map[0]), len(label_map))
-    mask = Image.new(mode, image_size, background_color)
-    sprite_colors = {'0': background_color}
-    for label in sprites.keys():
-        while True:
-            red = random.randint(0, 255)
-            green = random.randint(0, 255)
-            blue = random.randint(0, 255)
-            if not (red, green, blue) in [sprite_colors[key] 
-                    for key in sprite_colors.keys()]:
-                if mode == 'RGBA':
-                    sprite_colors[label] = (red, green, blue, 255)
-                else:
-                    sprite_colors[label] =  (red, green, blue)
-                break 
-    width, height = mask.size
-    for x in range(width):
-        for y in range(height):
-            if label_map[y][x] != 0:
-                mask.putpixel((x, y), sprite_colors[label_map[y][x]])
-    for label in sprites.keys():
-        sprite = sprites[label]
-        for x in range(sprite.top_left[0], sprite.bottom_right[0] + 1):
-            mask.putpixel((sprite.bottom_right[1], x), sprite_colors[label])
-            mask.putpixel((sprite.top_left[1], x), sprite_colors[label])
-        for x in range(sprite.top_left[1], sprite.bottom_right[1] + 1):
-            mask.putpixel((x, sprite.top_left[0]), sprite_colors[label])
-            mask.putpixel((x, sprite.bottom_right[0]), sprite_colors[label])
-    return mask
+    def create_sprite_labels_image(self):
+        """Create an image containing mask for all sprite based on label_map
+        
+        Arguments:
+            sprites {dictionary} -- Container of all Sprite object
+            label_map {2d list} -- Label_map of image
+        
+        Keyword Arguments:
+            background_color {tuple} -- Background color of new image (default: {None}) 
+        
+        Returns:
+            Image -- Image of all sprite mask
+        """
+        background_color = self.background_color
+        if not background_color and not isinstance(background_color, int):
+            mode = 'RGBA'
+        elif isinstance(background_color, tuple) and len(background_color) == 4:
+            mode = 'RGBA'
+        else: 
+            mode = 'RGB'
+        print(mode)
+        sprites, label_map = self.find_sprites()
+        image_size = (len(label_map[0]), len(label_map))
+        mask = Image.new(mode, image_size, background_color)
+        sprite_colors = {'0': background_color}
+        for label in sprites.keys():
+            while True:
+                red = random.randint(0, 255)
+                green = random.randint(0, 255)
+                blue = random.randint(0, 255)
+                if not (red, green, blue) in [sprite_colors[key] 
+                        for key in sprite_colors.keys()]:
+                    if mode == 'RGBA':
+                        sprite_colors[label] = (red, green, blue, 255)
+                    else:
+                        sprite_colors[label] =  (red, green, blue)
+                    break 
+        width, height = mask.size
+        for x in range(width):
+            for y in range(height):
+                if label_map[y][x] != 0:
+                    mask.putpixel((x, y), sprite_colors[label_map[y][x]])
+        for label in sprites.keys():
+            sprite = sprites[label]
+            for x in range(sprite.top_left[0], sprite.bottom_right[0] + 1):
+                mask.putpixel((sprite.bottom_right[1], x), sprite_colors[label])
+                mask.putpixel((sprite.top_left[1], x), sprite_colors[label])
+            for x in range(sprite.top_left[1], sprite.bottom_right[1] + 1):
+                mask.putpixel((x, sprite.top_left[0]), sprite_colors[label])
+                mask.putpixel((x, sprite.bottom_right[0]), sprite_colors[label])
+        return mask
