@@ -17,7 +17,7 @@ setup(
     maintainer = __maintainer__,
     version = __version__,
     install_requires=[
-        "numpy==1.17.2",
+        "numpy==1.22.0",
         "Pillow==6.2.0",
     ]
 )
