@@ -18,6 +18,6 @@ setup(
     version = __version__,
     install_requires=[
         "numpy==1.17.2",
-        "Pillow==6.2.0",
+        "Pillow==9.3.0",
     ]
 )
